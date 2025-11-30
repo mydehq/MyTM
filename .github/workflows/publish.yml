@@ -13,6 +13,9 @@ concurrency:
   group: publish-themes
   cancel-in-progress: true
 
+permissions:
+  contents: write
+
 jobs:
   compile:
     runs-on: ubuntu-latest
@@ -127,9 +130,11 @@ jobs:
         run: |
           # Check if repo branch exists
           if git ls-remote --heads origin repo | grep -q repo; then
+            echo "Repo branch exists, checking out..."
             git checkout repo
             git pull origin repo
           else
+            echo "Creating new repo branch..."
             git checkout --orphan repo
             git rm -rf .
             echo "# Theme Repository" > README.md
@@ -141,7 +146,8 @@ jobs:
             echo "See \`index.yml\` for a complete listing of available themes." >> README.md
             git add README.md
             git commit -m "Initialize repo branch"
-            git push origin repo
+            echo "Pushing new repo branch..."
+            git push --set-upstream origin repo
           fi
 
       - name: Publish themes and index
@@ -171,6 +177,7 @@ jobs:
             echo "Generated from commit: ${{ github.sha }}" >> commit_msg.txt
 
             git commit -F commit_msg.txt
+            echo "Pushing changes to repo branch..."
             git push origin repo
 
             echo "✓ Published theme archives and index to repo branch"
