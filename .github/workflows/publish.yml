@@ -78,11 +78,19 @@ jobs:
             # Create tar.gz archive of the theme directory
             tar -czf "dist/$archive_name" -C themes "$theme_name"
 
+            # Generate SHA256 checksum
+            checksum=$(sha256sum "dist/$archive_name" | cut -d' ' -f1)
+
             archives+=("$archive_name")
 
+            index_file="dist/index.yml"
+
             # Append to index.yml
-            echo "  - name: \"$theme_name\"" >> dist/index.yml
-            echo "    version: \"$version\"" >> dist/index.yml
+            echo "  - name: \"$theme_name\"" >> $index_file
+            echo "    version: \"$version\"" >> $index_file
+            echo "    archive: \"$archive_name\"" >> $index_file
+            echo "    hash: \"$checksum\"" >> $index_file
+            echo "" >> $index_file
 
             echo "✓ Created: $archive_name"
           done
