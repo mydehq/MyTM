@@ -5,7 +5,6 @@
 
 set -e
 
-#--------------- Config ----------------
 # Determine project root directory
 SCRIPT_DIR="$(dirname "${BASH_SOURCE[0]}")"
 
@@ -15,14 +14,19 @@ else
     PROJECT_ROOT="."
 fi
 
+
+#--------------- Config ----------------
+
 INPUT_DIR="$PROJECT_ROOT/themes"
 OUTPUT_DIR="$PROJECT_ROOT/dist"
 CONFIG_FILE="$PROJECT_ROOT/config.yml"
+TEMP_DIR="$OUTPUT_DIR/.tmp"
+
+#------------ functions ------------------
 
 # Source utility functions
 source "$SCRIPT_DIR/_utils.sh"
 
-#------------ functions ------------------
 
 show-help() {
     cat << EOF
@@ -46,6 +50,7 @@ EOF
 
 #-------------- entry point ------------------
 
+echo
 
 # Run main function if script is executed directly
 if [[ "${BASH_SOURCE[0]}" != "${0}" ]]; then
@@ -86,11 +91,18 @@ has-cmd yq jq tar awk || exit 1
 
 #------ Start Build --------
 
-# Create Ooutput dir
+# Create output dir and temp dir
 mkdir -p "$OUTPUT_DIR"
+mkdir -p "$TEMP_DIR"
+
+# Set up cleanup trap
+cleanup() {
+    rm -rf "$TEMP_DIR"
+}
+trap cleanup EXIT
 
 # Initialize themes array, archives list, theme_count
-echo '[]' >/tmp/themes.json
+echo '[]' >"$TEMP_DIR/themes.json"
 archives=()
 theme_count=0
 
@@ -127,7 +139,7 @@ for theme_dir in "$INPUT_DIR"/*; do
 
     # Add to themes array
     jq --argjson theme "$theme_json" '. += [$theme]' \
-      /tmp/themes.json >/tmp/themes_new.json && mv /tmp/themes_new.json /tmp/themes.json
+      "$TEMP_DIR/themes.json" >"$TEMP_DIR/themes_new.json" && mv "$TEMP_DIR/themes_new.json" "$TEMP_DIR/themes.json"
 
     # Track archive name
     archives+=("$archive_name")
@@ -164,7 +176,7 @@ printf "  "; log.success "themes: $theme_count"
 
 # Build final index.json
 jq -n \
-    --argjson themes "$(cat /tmp/themes.json)" \
+    --argjson themes "$(cat "$TEMP_DIR/themes.json")" \
     --arg download_url "$download_url" \
     --arg release_time "$release_time" \
     '{
@@ -177,7 +189,7 @@ log.success "Built index.json"
 echo
 
 # Cleanup
-rm -rf /tmp/themes.json
+rm -rf "$TEMP_DIR"
 
 
 # Show file sizes
