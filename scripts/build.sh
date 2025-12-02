@@ -1,0 +1,193 @@
+#!/bin/env bash
+
+# MyThemes Package Builder
+# Builds theme packages & generates index.json
+
+set -e
+
+#--------------- Config ----------------
+# Determine project root directory
+SCRIPT_DIR="$(dirname "${BASH_SOURCE[0]}")"
+
+if [[ "$(basename "$PWD")" == "scripts" ]]; then
+    PROJECT_ROOT=".."
+else
+    PROJECT_ROOT="."
+fi
+
+INPUT_DIR="$PROJECT_ROOT/themes"
+OUTPUT_DIR="$PROJECT_ROOT/dist"
+CONFIG_FILE="$PROJECT_ROOT/config.yml"
+
+# Source utility functions
+source "$SCRIPT_DIR/_utils.sh"
+
+#------------ functions ------------------
+
+show-help() {
+    cat << EOF
+MyCTL Theme Builder & Bundler
+
+DESC:
+    Builds theme packages, generates SHA256 checksums &
+    creates an index.json file with metadata.
+
+USAGE:
+    $0 [OPTIONS]
+
+FLAGS:
+    -h, --help              Show this help message
+    -i, --input-dir DIR     Override input directory from config
+    -o, --output-dir DIR    Override output directory from config
+    -c, --config FILE       Set config file (default: $CONFIG_FILE)
+EOF
+}
+
+
+#-------------- entry point ------------------
+
+
+# Run main function if script is executed directly
+if [[ "${BASH_SOURCE[0]}" != "${0}" ]]; then
+    log.error "This script should not be sourced."
+    exit 1
+fi
+
+
+# Parse command line arguments
+while [[ $# -gt 0 ]]; do
+    case $1 in
+        -h|--help)
+            show-help
+            exit 0
+            ;;
+        -o|--output-dir)
+            OUTPUT_DIR="$2"
+            shift 2
+            ;;
+        -i|--input-dir)
+            INPUT_DIR="$2"
+            shift 2
+            ;;
+        -c|--config)
+            CONFIG_FILE="$2"
+            shift 2
+            ;;
+        *)
+            log.error "Unknown option: $1"
+            show-help
+            exit 1
+            ;;
+    esac
+done
+
+has-cmd yq jq tar awk || exit 1
+
+
+#------ Start Build --------
+
+# Create Ooutput dir
+mkdir -p "$OUTPUT_DIR"
+
+# Initialize themes array, archives list, theme_count
+echo '[]' >/tmp/themes.json
+archives=()
+theme_count=0
+
+log.info "Packaging Themes: "
+for theme_dir in "$INPUT_DIR"/*; do
+
+    validate-theme-dir "$theme_dir" || exit 1
+
+    theme_yml="$theme_dir/theme.yml"
+
+    # Get theme name, replace spaces with `-`
+    theme_name="$(basename "$theme_dir")" && theme_name="${theme_name// /-}"
+
+    theme_version=$(get-theme-ver "$theme_yml") || exit 1
+    archive_name="$(get-conf 'build.archive_name' "$theme_dir").tar.gz" || exit 1
+    archive_path="$OUTPUT_DIR/$archive_name"
+
+
+    # generrate theme archive
+    tar -czf "$archive_path" -C "$theme_dir" .
+
+    ! [ -f "$archive_path" ] && {
+        log.error "Failed to create archive for theme '$theme_name'"
+        exit 1
+    }
+
+    # generate sha256 hash
+    archive_hash=$(sha256sum "$archive_path" | awk '{print $1}')
+
+    printf "   "; log.success "Packaged: $archive_name"
+
+    theme_json=$(jq -n --arg name "$theme_name" --arg version "$theme_version" --arg file "$archive_name" --arg hash "$archive_hash" \
+        '{name: $name, version: $version, file: $file, hash: $hash}')
+
+    # Add to themes array
+    jq --argjson theme "$theme_json" '. += [$theme]' \
+      /tmp/themes.json >/tmp/themes_new.json && mv /tmp/themes_new.json /tmp/themes.json
+
+    # Track archive name
+    archives+=("$archive_name")
+    theme_count=$((theme_count + 1))
+done
+
+log.success "Packaged $theme_count theme(s)."
+echo
+
+#--------- packaging ------------
+
+if [ "$theme_count" -eq 0 ]; then
+    log.error "No valid Themes found to package"
+    exit 1
+fi
+
+release_time=$(date +%s) || {
+    log.error "Failed to get release time"
+    exit 1
+}
+
+
+log.info "Building index.json"
+
+download_url=$(get-conf -r "output.download_url" "$theme_dir") || {
+    log.error "Failed to get download URL"
+    exit 1
+}
+
+printf "  "; log.success "download_url: $download_url"
+printf "  "; log.success "release_time: $release_time"
+printf "  "; log.success "themes: $theme_count"
+
+
+# Build final index.json
+jq -n \
+    --argjson themes "$(cat /tmp/themes.json)" \
+    --arg download_url "$download_url" \
+    --arg release_time "$release_time" \
+    '{
+        "download_url": $download_url,
+        "release_time": ($release_time | tonumber),
+        "themes": $themes
+    }' > "$OUTPUT_DIR/index.json"
+
+log.success "Built index.json"
+echo
+
+# Cleanup
+rm -rf /tmp/themes.json
+
+
+# Show file sizes
+echo -e "----------- Summary ---------------\n"
+calc-theme-sizes "$OUTPUT_DIR"
+
+# Output for GitHub Actions (if running in CI)
+if [ -n "$GITHUB_OUTPUT" ]; then
+  printf -v archive_list '%s,' "${archives[@]}"
+  archive_list="${archive_list%,}"
+  echo "theme-archives=$archive_list" >>"$GITHUB_OUTPUT"
+  echo "release-number=$release_time" >>"$GITHUB_OUTPUT"
+fi

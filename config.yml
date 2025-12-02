@@ -1,0 +1,24 @@
+#   ____             __ _
+#  / ___|___  _ __  / _(_) __ _
+# | |   / _ \| '_ \| |_| |/ _` |
+# | |__| (_) | | | |  _| | (_| |
+#  \____\___/|_| |_|_| |_|\__, |
+#                         |___/
+#
+# ------------------------------------
+
+# Variables available in ${{var_name}} format
+#   These will be replaced with actual values:
+#       name: The name of the theme
+#       version: The version of the theme
+#       author: The author of the theme
+#       file: The complete filename of the theme archive
+
+build:
+  input_dir: "themes"
+  output_dir: "dist"
+  archive_name: "${{name}}-${{version}}"
+
+output:
+  # Direct Download link/path for archives
+  download_url: "https://github.com/mydehq/MyThemes/raw/refs/heads/repo/${{file}}"

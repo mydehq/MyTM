@@ -25,85 +25,14 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Install yq
-        run: |
-          sudo wget -qO /usr/local/bin/yq https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64
-          sudo chmod +x /usr/local/bin/yq
+      - name: Setup yq
+        uses: mikefarah/yq@master
 
       - name: Package themes
         id: package
         run: |
-          mkdir -p dist
-          archives=()
-
-          # Create index.yml header
-          echo "# MyThemes Index" > dist/index.yml
-          echo "# Auto-generated theme listing" >> dist/index.yml
-          echo "updated: \"PLACEHOLDER_DATE\"" >> dist/index.yml
-          echo "themes:" >> dist/index.yml
-
-          for theme_dir in themes/*/; do
-            if [ ! -d "$theme_dir" ]; then
-              echo "Skipping non-directory $theme_dir"
-              continue
-            fi
-
-            theme_name="$(basename "$theme_dir")"
-            theme_yml="$theme_dir/theme.yml"
-
-            if [ ! -f "$theme_yml" ]; then
-              echo "ERROR: No theme.yml found in $theme_dir" >&2
-              exit 1
-            fi
-
-            # Check if theme.yml is empty
-            if [ ! -s "$theme_yml" ]; then
-              echo "ERROR: theme.yml is empty in $theme_dir, skipping" >&2
-              exit 1
-            fi
-
-            # Extract version
-            version=$(yq eval '.theme.version' "$theme_yml")
-
-            if [ "$version" = "null" ] || [ -z "$version" ]; then
-              echo "ERROR: No version found in $theme_yml" >&2
-              exit 1
-            fi
-
-            echo "Extracted version: $version for theme: $theme_name"
-
-            archive_name="${theme_name}-${version}.tar.gz"
-            echo "Creating archive: $archive_name"
-
-            # Create tar.gz archive of the theme directory
-            tar -czf "dist/$archive_name" -C themes "$theme_name"
-
-            # Generate SHA256 checksum
-            checksum=$(sha256sum "dist/$archive_name" | cut -d' ' -f1)
-
-            archives+=("$archive_name")
-
-            index_file="dist/index.yml"
-
-            # Append to index.yml
-            echo "  - name: \"$theme_name\"" >> $index_file
-            echo "    version: \"$version\"" >> $index_file
-            echo "    archive: \"$archive_name\"" >> $index_file
-            echo "    hash: \"$checksum\"" >> $index_file
-            echo "" >> $index_file
-
-            echo "✓ Created: $archive_name"
-          done
-
-          # Replace placeholders in index.yml
-          sed -i "s/PLACEHOLDER_DATE/$(date -u '+%Y-%m-%dT%H:%M:%SZ')/g" dist/index.yml
-
-          # Output the list of created archives
-          printf -v archive_list '%s,' "${archives[@]}"
-          archive_list="${archive_list%,}"
-          echo "theme-archives=$archive_list" >> $GITHUB_OUTPUT
-
-          echo "Created ${#archives[@]} theme archive(s) and index.yml"
+          chmod +x scripts/build.sh
+          bash scripts/build.sh
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
@@ -151,7 +80,7 @@ jobs:
             echo "" >> README.md
             echo "## Available Themes" >> README.md
             echo "" >> README.md
-            echo "See \`index.yml\` for a complete listing of available themes." >> README.md
+            echo "See [index.json](index.json) for a complete listing of available themes." >> README.md
             git add README.md
             git commit -m "Initialize repo branch"
             echo "Pushing new repo branch..."
@@ -162,10 +91,10 @@ jobs:
         run: |
           # Copy new archives and index
           cp dist/*.tar.gz . 2>/dev/null || true
-          cp dist/index.yml . 2>/dev/null || true
+          cp dist/index.json . 2>/dev/null || true
 
           # Add all files
-          git add index.yml *.tar.gz
+          git add index.json *.tar.gz
 
           # Check if there are changes to commit
           if git diff --staged --quiet; then
@@ -180,7 +109,7 @@ jobs:
               echo "- $archive" >> commit_msg.txt
             done
             echo "" >> commit_msg.txt
-            echo "Updated index.yml with theme metadata" >> commit_msg.txt
+            echo "Updated index.json with theme metadata" >> commit_msg.txt
             echo "" >> commit_msg.txt
             echo "Generated from commit: ${{ github.sha }}" >> commit_msg.txt
 
@@ -206,6 +135,6 @@ jobs:
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "## 📋 Index File" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "The \`index.yml\` file has been updated with theme metadata." >> $GITHUB_STEP_SUMMARY
+          echo "The \`index.json\` file has been updated with theme metadata." >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "View all files in the [\`repo\`](../../tree/repo) branch." >> $GITHUB_STEP_SUMMARY
