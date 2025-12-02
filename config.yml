@@ -9,16 +9,23 @@
 
 # Variables available in ${{var_name}} format
 #   These will be replaced with actual values:
-#       name: The name of the theme
+#       name:    The name of the theme
 #       version: The version of the theme
-#       author: The author of the theme
-#       file: The complete filename of the theme archive
+#       author:  The author of the theme
+#       file:    The filename with ext of theme archive
 
 build:
   input_dir: "themes"
   output_dir: "dist"
   archive_name: "${{name}}-${{version}}"
 
-output:
+index:
+  # Schema version to use
+  schema_version: 1
+
+  # default repo name
+  repo_name: "official"
+
   # Direct Download link/path for archives
+  # MUST add ${{file}} in the filename's place
   download_url: "https://github.com/mydehq/MyThemes/raw/refs/heads/repo/${{file}}"

@@ -164,6 +164,10 @@ release_time=$(date +%s) || {
 
 log.info "Building index.json"
 
+schema_version=$(get-conf -r "index.schema_version" "$theme_dir") || {
+    log.error "Failed to get schema version"
+    exit 1
+}
 
 repo_name=$(get-conf -r "index.repo_name" "$theme_dir") || {
     log.error "Failed to get repo name"
@@ -175,20 +179,22 @@ download_url=$(get-conf -r "index.download_url" "$theme_dir") || {
     exit 1
 }
 
+printf "  "; log.success "schema_version: $schema_version"
 printf "  "; log.success "repo_name: $repo_name"
 printf "  "; log.success "release_time: $release_time"
 printf "  "; log.success "download_url: $download_url"
-printf "  "; log.success "release_time: $release_time"
 printf "  "; log.success "themes: $theme_count"
 
 
 # Build final index.json
 jq -n \
     --argjson themes "$(cat "$TEMP_DIR/themes.json")" \
+    --arg schema_version "$schema_version" \
     --arg repo_name "$repo_name" \
     --arg download_url "$download_url" \
     --arg release_time "$release_time" \
     '{
+        "schema_version": ($schema_version | tonumber),
         "repo_name": $repo_name,
         "release_time": ($release_time | tonumber),
         "download_url": $download_url,
