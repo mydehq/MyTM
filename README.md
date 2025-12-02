@@ -10,12 +10,12 @@ Support gtk, qt, kde, rofi & others through templates
 
 ---
 
-> [!WARNING]
-> The MyCTL plugin step is not required for now.
-
 ## Installation
 
 ### Add the Plugin to MyCTL
+
+> [!WARNING]
+> The MyCTL plugin step is not required for now.
 
 ```bash
 myctl plugin add mytm
