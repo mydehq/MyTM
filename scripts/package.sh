@@ -31,11 +31,11 @@ source "$SCRIPT_DIR/.utils.sh"
 
 show-help() {
     cat << EOF
-MyCTL Theme Builder & Bundler
+MyTM Theme Packager
 
 DESC:
-    Builds theme packages, generates SHA256 checksums,
-    creates an index.json with metadata, builds README.md.
+    Packages themes into distributable archives, generates SHA256 checksums,
+    creates an index.json with metadata, and builds README.md.
 
 USAGE:
     $0 [OPTIONS]
@@ -172,7 +172,7 @@ release_time=$(date +%s) || {
 }
 
 
-log.info "Building index.json"
+log.info "Generating index.json"
 
 schema_version=$(get-conf -r "index.schema_version" "") || {
     log.error "Failed to get schema version"
@@ -225,7 +225,7 @@ jq -n \
         "themes": $themes
     }' > "$OUTPUT_DIR/index.json"
 
-log.success "Built index.json"
+log.success "Generated index.json"
 echo
 
 #--------- Build README ------------

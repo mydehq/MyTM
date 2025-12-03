@@ -34,8 +34,8 @@ jobs:
       - name: Package themes
         id: package
         run: |
-          chmod +x scripts/build.sh
-          bash scripts/build.sh
+          chmod +x scripts/package.sh
+          bash scripts/package.sh
 
       - name: Get output directory from config
         id: get-config

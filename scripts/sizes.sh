@@ -57,7 +57,7 @@ done
 # Check if output directory exists
 if [ ! -d "$OUTPUT_DIR" ]; then
     log.error "Output directory not found: $OUTPUT_DIR"
-    log.info "Run 'scripts/build.sh' first to generate theme archives"
+    log.info "Run 'scripts/package.sh' first to generate theme archives"
     exit 1
 fi
 
