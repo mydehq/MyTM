@@ -8,7 +8,7 @@
 
 MyTM or My Theme Manager is a [MyCTL](https://github.com/mydehq/myctl) plugin for desktop theme management.
 <br>
-Support gtk, qt, kde, rofi & others through templates
+Supports gtk, qt, kde, rofi & others through templates
 
 </div>
 
