@@ -189,6 +189,18 @@ download_url=$(get-conf -r "index.download_url" "") || {
     exit 1
 }
 
+# Validate that download_url contains the required ${{file}} placeholder
+printf "   "; log.info "Validating download URL"
+
+if [[ "$download_url" != *'${{file}}'* ]]; then
+    log.error "download_url must contain '\${{file}}' placeholder for theme archives name"
+    log.error "Current download_url: $download_url"
+    log.error "Example: https://example.com/download/\${{file}}"
+    exit 1
+fi
+
+printf "   "; log.success "Done"
+
 printf "   "; log.success "schema_version: $schema_version"
 printf "   "; log.success "repo_name: $repo_name"
 printf "   "; log.success "release_time: $release_time"
