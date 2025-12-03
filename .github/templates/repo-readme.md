@@ -4,7 +4,7 @@ This file is a template used by GitHub Actions to initialize the repo branch.
 
 <div align="center">
 
-# MyDE Global Theme Repo
+# MyTM Global Theme Repo
 
 This branch contains packaged theme archives and index of MyCTL/MyDE.
 
