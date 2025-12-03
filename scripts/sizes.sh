@@ -16,7 +16,7 @@ fi
 OUTPUT_DIR="$PROJECT_ROOT/dist"
 
 # Source utility functions
-source "$SCRIPT_DIR/_utils.sh"
+source "$SCRIPT_DIR/.utils.sh"
 
 # Show help
 show-help() {
