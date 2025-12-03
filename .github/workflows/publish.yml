@@ -5,7 +5,7 @@ on:
     branches: [main]
     paths:
       - .github/workflows/publish.yml
-      - "src/repo-readme-template.md"
+      - "config.yml"
       - "themes/*"
       - "scripts/*"
 
@@ -23,6 +23,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       theme-archives: ${{ steps.package.outputs.theme-archives }}
+      output-dir: ${{ steps.get-config.outputs.output-dir }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -36,11 +37,17 @@ jobs:
           chmod +x scripts/build.sh
           bash scripts/build.sh
 
+      - name: Get output directory from config
+        id: get-config
+        run: |
+          OUTPUT_DIR=$(yq eval '.build.output_dir' config.yml)
+          echo "output-dir=$OUTPUT_DIR" >> $GITHUB_OUTPUT
+
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
           name: theme-archives
-          path: dist/*
+          path: ${{ steps.get-config.outputs.output-dir }}/*
           retention-days: 30
 
   publish:
@@ -58,7 +65,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: theme-archives
-          path: dist
+          path: ${{ needs.compile.outputs.output-dir }}
 
       - name: Configure Git
         run: |
@@ -73,30 +80,26 @@ jobs:
             git checkout repo
             git pull origin repo
           else
-            echo "Creating new repo branch..."
+            echo "Creating repo branch..."
             git checkout --orphan repo
             git rm -rf .
-            git checkout main -- src/repo-readme-template.md
-            cp src/repo-readme-template.md README.md
             rm -rf .github
-            git add README.md
-            git commit -m "Initialize repo branch"
+            git commit --allow-empty -m "Initialize repo branch"
             echo "Pushing new repo branch..."
             git push --set-upstream origin repo
           fi
 
       - name: Publish themes and index
         run: |
-          # Copy new archives and index
-          cp dist/*.tar.gz . 2>/dev/null || true
-          cp dist/index.json . 2>/dev/null || true
+          # Copy everything from output dir
+          cp ${{ needs.compile.outputs.output-dir }}/* . 2>/dev/null || true
 
           # Add all files
-          git add index.json *.tar.gz
+          git add .
 
           # Check if there are changes to commit
           if git diff --staged --quiet; then
-            echo "No new archives or index changes to commit"
+            echo "No new files to commit"
           else
             # Create commit message with list of archives
             echo "Update theme archives and index" > commit_msg.txt
@@ -107,7 +110,7 @@ jobs:
               echo "- $archive" >> commit_msg.txt
             done
             echo "" >> commit_msg.txt
-            echo "Updated index.json with theme metadata" >> commit_msg.txt
+            echo "Updated repo" >> commit_msg.txt
             echo "" >> commit_msg.txt
             echo "Generated from commit: ${{ github.sha }}" >> commit_msg.txt
 
@@ -115,7 +118,7 @@ jobs:
             echo "Pushing changes to repo branch..."
             git push origin repo
 
-            echo "✓ Published theme archives and index to repo branch"
+            echo "✓ Published all theme files to repo branch"
           fi
 
       - name: Create release summary
@@ -131,8 +134,8 @@ jobs:
           done
 
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "## 📋 Index File" >> $GITHUB_STEP_SUMMARY
+          echo "## 📋 Published Files" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "The \`index.json\` file has been updated with theme metadata." >> $GITHUB_STEP_SUMMARY
+          echo "All files from the \`${{ needs.compile.outputs.output-dir }}/\` directory have been published, including theme archives, \`index.json\` with metadata, and \`README.md\`." >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "View all files in the [\`repo\`](../../tree/repo) branch." >> $GITHUB_STEP_SUMMARY
