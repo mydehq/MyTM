@@ -74,8 +74,8 @@ jobs:
             echo "Creating new repo branch..."
             git checkout --orphan repo
             git rm -rf .
-            git checkout main -- .github/templates/repo-readme.md
-            cp .github/templates/repo-readme.md README.md
+            git checkout main -- src/repo-readme-template.md
+            cp src/repo-readme-template.md README.md
             rm -rf .github
             git add README.md
             git commit -m "Initialize repo branch"
