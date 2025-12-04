@@ -9,10 +9,10 @@
 
 # Variables available in ${{var_name}} format
 #   These will be replaced with actual values:
-#       name:    The name of the theme
-#       version: The version of the theme
-#       author:  The author of the theme
-#       file:    The filename with ext of theme archive
+#       name:    name of the theme
+#       version: version of the theme
+#       author:  author of the theme
+#       file:    filename with ext of theme archive
 
 build:
   input_dir: "themes"

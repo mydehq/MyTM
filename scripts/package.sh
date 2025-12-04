@@ -14,8 +14,7 @@ else
     PROJECT_ROOT="."
 fi
 
-
-#--------------- Config ----------------
+#--------------- Fallback Config ----------------
 
 INPUT_DIR="$PROJECT_ROOT/themes"
 OUTPUT_DIR="$PROJECT_ROOT/dist"
