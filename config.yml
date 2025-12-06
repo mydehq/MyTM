@@ -1,6 +1,7 @@
 packaging:
   input-dir: "themes"
   output-dir: "dist"
+  publish-branch: "repo"
 
   archive:
     # Max num of versions to keep of each theme
