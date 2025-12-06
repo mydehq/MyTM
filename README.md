@@ -1,7 +1,7 @@
 <div align="center">
 
 <h1>
-    <img src="./src/icon.png" alt="MyTM" width="80">
+    <img src="./app/src/icon.png" alt="MyTM" width="80">
     <p>MyTM</p>
 </h1>
 
