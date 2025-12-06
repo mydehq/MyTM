@@ -17,6 +17,8 @@ log.info() { echo -e "${BLUE}!${NC} $1" >&2; }
 
 log.success() { echo -e "${GREEN}✔️${NC} $1" >&2; }
 
+log.warn() { echo -e "${YELLOW}⚠️ ${NC} $1" >&2; }
+
 log.error() { echo -e "${RED}❌${NC} $1" >&2; }
 
 #------------ Utility Functions ------------------
@@ -45,14 +47,14 @@ has-cmd() {
 }
 
 get-conf() {
-    local key theme_dir return_raw=false
-    local dest_file="$CONFIG_FILE" raw_value final_value
+    local key json_flag=""
+    local conf_file="$CONFIG_FILE" root_key=".packaging"
 
     # Parse flags
     while [ "$#" -gt 0 ]; do
         case "$1" in
-            -r|--raw)
-                return_raw=true
+            -j|--json)
+                json_flag="-o=json"
                 shift
                 ;;
             *)
@@ -63,28 +65,24 @@ get-conf() {
 
     # Get remaining arguments
     key="$1"
-    theme_dir="$2"
+
+    if [ -n "$2" ]; then
+        conf_file="$2"
+        root_key=""
+    fi
 
     # Get config value
-    raw_value="$(yq eval ".${key}" "$dest_file" 2>/dev/null | tr -d '\0')" || {
-        log.error "Failed to get config value for key '$key' from '$dest_file'"
+    value="$(yq $json_flag eval "${root_key}.${key}" "$conf_file" 2>/dev/null)" || {
+        log.error "Failed to get config value for key '$key' from '$conf_file'"
         return 1
     }
 
-    if [ "$raw_value" == "null" ] || [ -z "$raw_value" ]; then
-        log.error "Config key '$key' not found or empty in '$dest_file'"
+    if [ "$value" == "null" ] || [ -z "$value" ]; then
+        log.error "Config key '$key' not found or empty in '$conf_file'"
         return 1
     fi
 
-    # Return raw value if requested
-    if [ "$return_raw" = true ]; then
-        echo "$raw_value"
-        return 0
-    fi
-
-    # Replace variables and return
-    final_value="$(replace-vars "$raw_value" "$theme_dir")"
-    echo "$final_value"
+    echo "$value"
 }
 
 replace-vars() {
@@ -120,34 +118,6 @@ get-theme-ver() {
     echo "$version"
 }
 
-validate-theme-dir() {
-   local theme_dir="$1"
-   local theme_yml="$theme_dir/theme.yml"
-
-   # Validate theme directory
-   ! [ -d "$theme_dir" ] && {
-      log.error "Theme dir '$theme_dir' does not exist"
-      return 1
-   }
-
-   # Validate theme.yml file
-   ! [ -f "$theme_yml" ] && {
-      log.error "Theme dir '$theme_dir' does not contain a theme.yml"
-      return 1
-   }
-
-   # Validate theme.yml file is not empty
-   ! [ -s "$theme_yml" ] && {
-      log.error "theme.yml is empty in '$theme_dir'."
-      return 1
-   }
-
-   get-theme-ver "$theme_yml" >/dev/null || {
-        log.error "Theme version not found"
-        return 1
-   }
-}
-
 # Format bytes to human readable size (KB, MB, GB)
 format-size() {
     local bytes="$1"
@@ -181,7 +151,7 @@ get-file-size() {
 }
 
 # Calculate total size of theme files and index.json
-calc-theme-sizes() {
+show-repo-summary() {
     local output_dir="$1"
     local total_bytes=0
     local file_count=0
@@ -231,18 +201,4 @@ calc-theme-sizes() {
         local size=$(get-file-size "$archive")
         printf "   "; echo -e "${BLUE}$(basename "$archive"): ${GREEN}$(format-size "$size")${NC}"
     done
-}
-
-# Standalone function to show file sizes (can be called independently)
-show-sizes() {
-    local output_dir="${1:-dist}"
-
-    if [ ! -d "$output_dir" ]; then
-        log.error "Directory not found: $output_dir"
-        return 1
-    fi
-
-    echo
-    log.info "File sizes in $output_dir:"
-    calc-theme-sizes "$output_dir"
 }
