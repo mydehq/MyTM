@@ -18,7 +18,8 @@ INPUT_DIR="$PROJECT_ROOT/themes"
 OUTPUT_DIR="$PROJECT_ROOT/dist"
 CONFIG_FILE="$PROJECT_ROOT/config.yml"
 TEMP_DIR="$PROJECT_ROOT/.tmp"
-README_TEMPLATE="$PROJECT_ROOT/src/repo-readme-template.md"
+HASH_ALGO="sha256"
+MAX_ARCHIVE_VERSIONS=10
 
 #------------ functions ------------------
 
@@ -52,19 +53,24 @@ FLAGS:
 EOF
 }
 
+
+# ---------- Start script ----------
+
+clear -x
+echo -e "\n==============${NC} ${YELLOW}MyTM Packager${NC} ==============\n"
+
 # ---------- override confs from config --------
 
+MyTM_VERSION="NULL"
 INPUT_DIR="$(get-conf "input-dir")" || exit 1
 OUTPUT_DIR="$(get-conf "output-dir")" || exit 1
 MAX_ARCHIVE_VERSIONS="$(get-conf "archive.max-versions")" || exit 1
-
 
 #-------------- parse arguments ------------------
 
 # Run main function if script is executed directly
 if [[ "${BASH_SOURCE[0]}" != "${0}" ]]; then
-  log.error "This script should not be sourced."
-  exit 1
+  log.fatal "This script should not be sourced."
 fi
 
 # Parse command line arguments
@@ -86,10 +92,6 @@ while [[ $# -gt 0 ]]; do
     CONFIG_FILE="$2"
     shift 2
     ;;
-  -rt | --readme-template)
-    README_TEMPLATE="$2"
-    shift 2
-    ;;
   *)
     log.error "Unknown option: $1"
     show-help
@@ -99,195 +101,210 @@ while [[ $# -gt 0 ]]; do
 done
 
 
-#------ check/create required cmds/files/dirs --------
+#------ Setup Environment --------
 
-has-cmd yq jq tar awk || exit 1
+log.info "Checking up environment..."
+log.tab.inc
 
-#------ Start Build --------
+req_cmds="yq jq tar awk"
+
+has-cmd $req_cmds || { log.fatal "Please install required commands"; }
+log.success "Available: $req_cmds"
+
+
+if [ -d "$INPUT_DIR" ]; then
+    log.success "Found Input dir: $INPUT_DIR/"
+else
+    log.fatal "Input directory does not exist"
+fi
 
 # Create output dir and temp dir
-mkdir -p "$OUTPUT_DIR" "$TEMP_DIR"
+if mkdir -p "$OUTPUT_DIR" "$TEMP_DIR"; then
+    log.success "Made output dir: $OUTPUT_DIR/"
+else
+    log.fatal "Failed to create output or temp directory"
+fi
+
 
 # Set up cleanup trap
 cleanup() { rm -rf "$TEMP_DIR"; }
-trap cleanup EXIT
 
-# Initialize themes array, archives list, theme_count
-echo '[]' >"$TEMP_DIR/themes.json"
-archives=()
-theme_count=0
 
-log.info "Packaging Themes "
+# ------------ Index.json check ------------
 
-# if [ -f "${CACHE_DIR}/mytm.json" ] && [ "$(jq 'has("themes")' "${CACHE_DIR}/mytm.json")" = "true" ]; then
-#     log.success "Found Cache."
-#     cache_exists=true
-# else
-#     log.info "No cache found."
-# fi
+if [ -f "${OUTPUT_DIR}/index.json" ]; then
 
-for theme_dir in "$INPUT_DIR"/*; do
+    log.info "Found old Index"
 
-  validate-theme-dir "$theme_dir" || exit 1
+    if rm "$OUTPUT_DIR/index.json"; then
+        log.success "Removed"
+    else
+        log.error "Failed to remove old Index"
+        log.fatal "Please remove it manually"
+    fi
 
-  theme_yml="$theme_dir/theme.yml"
+fi
 
-  theme_name="$(basename "$theme_dir")"
-  theme_version=$(get-theme-ver "$theme_yml") || exit 1
+log.info "Creating new index..."
 
-  # cache_exists && {
-  #     if [ "" ]
-  # }
+repo_name="$(get-conf "repo.name")" || exit 1
+repo_release_time="$(date +%s)"
+repo_src_urls="$(get-conf -j "archive.src-urls")" || exit 1
 
-  archive_name="$(get-conf 'build.archive_name' "$theme_dir").tar.gz" || exit 1
-  archive_path="$OUTPUT_DIR/$archive_name"
+# check if all urls contain ${{theme}} & ${{file}}
+if ! echo "$repo_src_urls" | jq -e 'all( .[] ; (contains("${{theme}}") and contains("${{file}}")) )' > /dev/null; then
+    log.fatal "All source URLs must contain \${{theme}} and \${{file}}."
+fi
 
-  # generrate theme archive
-  tar -czf "$archive_path" -C "$theme_dir" .
-
-  ! [ -f "$archive_path" ] && {
-    log.error "Failed to create archive for theme '$theme_name'"
-    exit 1
-  }
-
-  # generate sha256 hash
-  archive_hash=$(sha256sum "$archive_path" | awk '{print $1}')
-
-  printf "   "
-  log.success "Packaged: $archive_name"
-
-  theme_json=$(jq -n --arg name "$theme_name" --arg version "$theme_version" --arg file "$archive_name" --arg hash "$archive_hash" \
+# Create index.json
+jq -n \
+    --arg repo_name "$repo_name" \
+    --argjson release_time "$repo_release_time" \
+    --argjson repo_src_urls "$repo_src_urls" \
     '{
-            name: $name,
-            version: $version,
-            file: $file,
-            hash: $hash
-        }')
+        schema_ver: 2,
+        repo_name: $repo_name,
+        release: $release_time,
+        src_urls: $repo_src_urls,
+        themes: {}
+    }' \
+> "${OUTPUT_DIR}/index.json" || log.fatal "Failed to create index.json"
 
-  # Add to themes array
-  jq --argjson theme "$theme_json" '. += [$theme]' \
-    "$TEMP_DIR/themes.json" >"$TEMP_DIR/themes_new.json" && mv "$TEMP_DIR/themes_new.json" "$TEMP_DIR/themes.json"
-
-  # Track archive name
-  archives+=("$archive_name")
-  theme_count=$((theme_count + 1))
-done
-
-log.success "Packaged $theme_count theme(s)."
-echo
-
-#--------- packaging ------------
-
-if [ "$theme_count" -eq 0 ]; then
-  log.error "No valid Themes found to package"
-  exit 1
-fi
-
-release_time=$(date +%s) || {
-  log.error "Failed to get release time"
-  exit 1
-}
-
-log.info "Generating index.json"
-
-schema_version=$(get-conf -r "index.schema_version" "") || {
-  log.error "Failed to get schema version"
-  exit 1
-}
-
-repo_name=$(get-conf -r "index.repo_name" "") || {
-  log.error "Failed to get repo name"
-  exit 1
-}
-
-download_url=$(get-conf -r "index.download_url" "") || {
-  log.error "Failed to get download URL"
-  exit 1
-}
-
-# Validate that download_url contains the required ${{file}} placeholder
-printf "   "
-log.info "Validating download URL"
-
-if [[ ! "$download_url" =~ \$\{\{file\}\} ]]; then
-  log.error "download_url must contain '\${{file}}' placeholder for theme archives name"
-  log.error "Current download_url: $download_url"
-  log.error "Example: https://example.com/download/\${{file}}"
-  exit 1
-fi
-
-printf "   "
 log.success "Done"
 
-printf "   "
-log.success "schema_version: $schema_version"
-printf "   "
-log.success "repo_name: $repo_name"
-printf "   "
-log.success "release_time: $release_time"
-printf "   "
-log.success "download_url: $download_url"
-printf "   "
-log.success "themes: $theme_count"
+log.tab.reset
+log.success "Environment setup complete\n"
 
-# Build final index.json
-jq -n \
-  --arg schema_version "$schema_version" \
-  --arg repo_name "$repo_name" \
-  --arg release_time "$release_time" \
-  --arg download_url "$download_url" \
-  --arg hash_algo "sha256" \
-  --argjson themes "$(<"$TEMP_DIR/themes.json")" \
-  '{
-        "schema_version": $schema_version,
-        "repo_name": $repo_name,
-        "release_time": ($release_time | tonumber),
-        "download_url": $download_url,
-        "hash_algo": $hash_algo,
-        "themes": $themes
-    }' >"$OUTPUT_DIR/index.json"
+#-------------- Package Themes --------------
+log.info "Packaging themes..."
+log.tab.inc
 
-log.success "Generated index.json"
-echo
+added_theme_archives=()
+added_theme_count=0
 
-#--------- Build README ------------
+# Loop through all theme dirs
+for theme_dir in "${INPUT_DIR}"/*; do
 
-log.info "Building README.md"
+    log.info "${YELLOW}Processing: $theme_dir ${NC}"
+    log.tab.inc
 
-if [ ! -f "$README_TEMPLATE" ]; then
-  log.error "README template not found: $README_TEMPLATE"
-  exit 1
-fi
+    log.info "Validating dir.."
+    log.tab.inc
+    if validate-theme-dir "$theme_dir"; then
+        log.tab.dec
+        log.success "Directory valid"
+    else
+        log.tab.dec
+        log.fatal "Directory Invalid. Please check"
+    fi
 
-awk '
-BEGIN { in_comment = 0; found_first_comment = 0 }
-/^<!--/ && !found_first_comment { in_comment = 1; found_first_comment = 1; next }
-/^-->$/ && in_comment { in_comment = 0; next }
-!in_comment { print }
-' "$README_TEMPLATE" >"$OUTPUT_DIR/README.md" || {
-  log.error "Failed to process README template"
-  exit 1
-}
+    # Extract Theme Info
+    theme_yml="$theme_dir/theme.yml"
 
-printf "   "
-log.success "copied Template."
-printf "   "
-log.success "Processed Template."
+    theme_name="$(basename "$theme_dir")" || log.fatal "Failed to extract theme name"
+    theme_version="$(get-theme-ver "${theme_dir}/theme.yml")" || log.fatal "Failed to extract theme version"
 
-log.success "Built README.md"
-echo
+    # Build archive Info
+    archive_name="${theme_version}.tar.gz"
+    archive_dir="${OUTPUT_DIR}/$theme_name"
+    archive_path="${archive_dir}/${archive_name}"
 
-# Cleanup
-rm -rf "$TEMP_DIR"
+    # Create archive directory
+    mkdir -p "$archive_dir" || log.fatal "Failed to create directory: '$archive_dir'"
+    log.success "Created theme directory..."
+
+
+    #-------- Build theme archive ----------
+
+    tar -czf "$archive_path" -C "$theme_dir" . || {
+        log.fatal "Failed to package archive: '$theme_name'"
+    }
+    log.success "Packing Done"
+
+    if [ ! -f "$archive_path" ]; then
+        log.fatal "Theme archive not found: '$archive_path'"
+    fi
+
+    # Generate hash
+    archive_hash="$(gen-hash "$archive_path")" || {
+        log.fatal "Failed to generate hash for: '$archive_path'"
+    }
+    log.success "Generated $HASH_ALGO hash"
+
+
+    #-------------- Update .versions.json ----------------
+
+    versions_file="${OUTPUT_DIR}/$theme_name/.versions.json"
+    jq_tmp_file="$TEMP_DIR/.versions-$theme_name.json"
+
+    if [ ! -f "$versions_file" ]; then
+        echo "[]" > "$versions_file"
+    fi
+
+    # Check if version already exists
+    if jq -e --arg ver "$theme_version" 'any(.[]; .ver == $ver)' "$versions_file" > /dev/null; then
+        log.success "Entry exists in versions index"
+    else
+        if jq --arg ver "$theme_version" \
+           --arg hash "$archive_hash" \
+           --arg algo "$HASH_ALGO" \
+           '[ {ver: $ver, hash: {value: $hash, algo: $algo}} ] + .' \
+           "$versions_file" > "$jq_tmp_file" && \
+           mv "$jq_tmp_file" "$versions_file"; then
+            log.success "Updated versions index"
+        else
+            log.fatal "Failed to update versions index"
+        fi
+    fi
+
+
+    #-------------- Create Index Entry ----------------
+
+    export YQI_THM="$theme_name" \
+           YQI_VER="$theme_version"
+
+    yq -i '.themes.[env(YQI_THM)].latest = env(YQI_VER)' "$OUTPUT_DIR/index.json"
+    log.success "Added to Repository Index"
+
+
+    # ----------- Update theme tracking ------------
+    added_theme_archives+=("$archive_path")
+    ((added_theme_count++))
+
+    log.tab.dec
+    log.success "${GREEN}Packaged theme: $theme_name ($theme_version)$NC\n"
+done
+
+log.tab.reset
+log.success "${GREEN}Packaging complete${NC}\n"
+
+# ------- cleanup -----------
+log.info "Cleaning up..."
+cleanup
+log.success "Cleanup Complete\n"
 
 # Show file sizes
-echo -e "----------- Summary ---------------\n"
-calc-theme-sizes "$OUTPUT_DIR"
+echo -e "${BLUE}============= Summary ==============$NC\n"
+show-repo-size "$OUTPUT_DIR"
 
-# Output for GitHub Actions (if running in CI)
-if [ -n "$GITHUB_OUTPUT" ]; then
-  printf -v archive_list '%s,' "${archives[@]}"
-  archive_list="${archive_list%,}"
-  echo "theme-archives=$archive_list" >>"$GITHUB_OUTPUT"
-  echo "release-number=$release_time" >>"$GITHUB_OUTPUT"
+if [ "$added_theme_count" -eq 0 ]; then
+    echo "   No new themes added"
+else
+    echo -e "\n${GREEN}Themes Added: $added_theme_count$NC"
+    # Group versions by theme
+    declare -A theme_versions
+    for archive in "${added_theme_archives[@]}"; do
+        theme_name=$(basename "$(dirname "$archive")")
+        version=$(basename "$archive" .tar.gz)
+
+        if [ -z "${theme_versions[$theme_name]}" ]; then
+            theme_versions[$theme_name]="$version"
+        else
+            theme_versions[$theme_name]="${theme_versions[$theme_name]}, $version"
+        fi
+    done
+
+    for theme_name in "${!theme_versions[@]}"; do
+        echo -e "   - ${BLUE}$theme_name:${NC} ${theme_versions[$theme_name]}"
+    done
 fi
