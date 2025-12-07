@@ -13,25 +13,39 @@ export NC='\033[0m'
 
 #------------ Logging Functions ------------------
 
-# Sub command detection
-export _SUB_CMD=false
-_sub() {
-    if $_SUB_CMD; then
-        printf "   "
-    else
-        printf ""
+# Log indentation using numeric levels
+export _LOG_TAB=0
+
+_tab() {
+    local indent=""
+    if [ "$_LOG_TAB" -gt 0 ]; then
+        for ((i=0; i<$_LOG_TAB; i++)); do
+            indent+="   "
+        done
+        printf "%s" "$indent"
     fi
 }
-log.sub.start() { _SUB_CMD=true; }
-log.sub.end() { _SUB_CMD=false; }
+
+log.tab.inc() {
+    _LOG_TAB=$((_LOG_TAB + 1))
+}
+
+log.tab.dec() {
+    _LOG_TAB=$((_LOG_TAB - 1))
+    [ "$_LOG_TAB" -lt 0 ] && _LOG_TAB=0
+}
+
+log.tab.reset() {
+    _LOG_TAB=0
+}
 
 # Actual utils
-log.debug()   { _sub: printf "" >/dev/null; }
-log.info()    { _sub; echo -e "${BLUE}!${NC} $1" >&2; }
-log.success() { _sub; echo -e "${GREEN}✔️${NC} $1" >&2; }
-log.warn()    { _sub; echo -e "${YELLOW}⚠️ ${NC} $1" >&2; }
-log.error()   { _sub; echo -e "${RED}❌${NC} $1" >&2; }
-log.fatal()   { _sub; echo -e "${RED}❌ $1 ${NC}" >&2; exit 1; }
+log.debug()   { _tab; printf "" >/dev/null; }
+log.info()    { _tab; echo -e "${BLUE}!${NC} $1" >&2; }
+log.success() { _tab; echo -e "${GREEN}✔️${NC} $1" >&2; }
+log.warn()    { _tab; echo -e "${YELLOW}⚠️ ${NC} $1" >&2; }
+log.error()   { _tab; echo -e "${RED}❌${NC} $1" >&2; }
+log.fatal()   { _tab; echo -e "${RED}❌ $1 ${NC}" >&2; exit 1; }
 
 
 #------------ Utility Functions ------------------
