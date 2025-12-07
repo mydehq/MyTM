@@ -5,23 +5,34 @@
 
 #------------ Colors ------------------
 
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-BLUE='\033[0;34m'
-NC='\033[0m'
+export RED='\033[0;31m'
+export GREEN='\033[0;32m'
+export YELLOW='\033[1;33m'
+export BLUE='\033[0;34m'
+export NC='\033[0m'
 
 #------------ Logging Functions ------------------
 
-log.debug() { printf "" >/dev/null; }
+# Sub command detection
+export _SUB_CMD=false
+_sub() {
+    if $_SUB_CMD; then
+        printf "   "
+    else
+        printf ""
+    fi
+}
+log.sub.start() { _SUB_CMD=true; }
+log.sub.end() { _SUB_CMD=false; }
 
-log.info() { echo -e "${BLUE}!${NC} $1" >&2; }
+# Actual utils
+log.debug()   { _sub: printf "" >/dev/null; }
+log.info()    { _sub; echo -e "${BLUE}!${NC} $1" >&2; }
+log.success() { _sub; echo -e "${GREEN}✔️${NC} $1" >&2; }
+log.warn()    { _sub; echo -e "${YELLOW}⚠️ ${NC} $1" >&2; }
+log.error()   { _sub; echo -e "${RED}❌${NC} $1" >&2; }
+log.fatal()   { _sub; echo -e "${RED}❌ $1 ${NC}" >&2; exit 1; }
 
-log.success() { echo -e "${GREEN}✔️${NC} $1" >&2; }
-
-log.warn() { echo -e "${YELLOW}⚠️ ${NC} $1" >&2; }
-
-log.error() { echo -e "${RED}❌${NC} $1" >&2; }
 
 #------------ Utility Functions ------------------
 
@@ -47,7 +58,6 @@ has-cmd() {
   # Return 0 if all found, 1 if any were missing
   return "$missing"
 }
-
 get-conf() {
     local key json_flag=""
     local conf_file="$CONFIG_FILE" root_key=".packaging"
