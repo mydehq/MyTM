@@ -98,10 +98,19 @@ _log() {
             ;;
     esac
 
+    # Handle leading newlines - print them before indentation
+    local leading_newlines=""
+    while [ "${message#\\n}" != "$message" ]; do
+        leading_newlines+="\n"
+        message="${message#\\n}"
+    done
+
     if [ "$level" = "fatal" ]; then
         bold="${BOLD}"
+        echo -en "$leading_newlines" >&2
         _tab; echo -e "${color}${icon} ${bold}${message}${NC}" >&2
     else
+        echo -en "$leading_newlines" >&2
         _tab; echo -e "${color}${icon}${NC} ${bold}${message}${NC}" >&2
     fi
 
