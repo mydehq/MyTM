@@ -30,7 +30,7 @@ jobs:
           git fetch origin ${{ github.base_ref }}
 
           # Find all modified theme directories
-          CHANGED_DIRS=$(git diff --name-only origin/${{ github.base_ref }}...${{ github.sha }} -- themes/ \
+          CHANGED_DIRS=$(git diff --name-only origin/${{ github.base_ref }}...HEAD -- themes/ \
             | grep '^themes/' \
             | cut -d'/' -f2 \
             | sort -u)
