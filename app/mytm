@@ -54,6 +54,8 @@ FLAGS:
 EOF
 }
 
+cleanup() { rm -rf "$TEMP_DIR"; }
+
 
 # ---------- Start script ----------
 
@@ -104,7 +106,7 @@ done
 
 #------ Setup Environment --------
 
-log.info "Checking up environment..."
+log.info -b "Checking up environment..."
 log.tab.inc
 
 req_cmds="yq jq tar awk"
@@ -119,16 +121,31 @@ else
     log.fatal "Input directory does not exist"
 fi
 
-# Create output dir and temp dir
-if mkdir -p "$OUTPUT_DIR" "$TEMP_DIR"; then
-    log.success "Made output dir: $OUTPUT_DIR/"
+# Create temp dir
+if [ -d "$TEMP_DIR" ]; then
+    rm -rf "$TEMP_DIR"
+    log.success "Removed old Temp dir: $TEMP_DIR/"
 else
-    log.fatal "Failed to create output or temp directory"
+    mkdir -p "$TEMP_DIR" || log.fatal "Failed to create Temp dir: $TEMP_DIR/"
+    log.success "Created Temp dir"
+fi
+
+# Create output dir
+if [ "$VALIDATE_ONLY" != "true" ]; then
+    if [ -d "$OUTPUT_DIR" ]; then
+        log.success "Output dir exists: $OUTPUT_DIR/"
+    else
+       if mkdir -p "$OUTPUT_DIR"; then
+           log.success "Made output dir: $OUTPUT_DIR/"
+       else
+           log.fatal "Failed to create output or temp directory"
+       fi
+    fi
+else
+    log.info "Skipping output dir creation"
 fi
 
 
-# Set up cleanup trap
-cleanup() { rm -rf "$TEMP_DIR"; }
 
 
 # ------------ Index.json check ------------
@@ -174,10 +191,10 @@ jq -n \
 log.success "Done"
 
 log.tab.reset
-log.success "Environment setup complete\n"
+log.success -b "Environment setup complete\n"
 
 #-------------- Package Themes --------------
-log.info "Packaging themes..."
+log.info -b "Packaging themes..."
 log.tab.inc
 
 added_theme_archives=()
@@ -277,12 +294,12 @@ for theme_dir in "${INPUT_DIR}"/*; do
 done
 
 log.tab.reset
-log.success "${GREEN}Packaging complete${NC}\n"
+log.success -b "${GREEN}Packaging complete${NC}\n"
 
 # ------- cleanup -----------
-log.info "Cleaning up..."
+log.info -b "Cleaning up..."
 cleanup
-log.success "Cleanup Complete\n"
+log.success -b "Cleanup Complete\n"
 
 # Show file sizes
 echo -e "${BLUE}============= Summary ==============$NC\n"
