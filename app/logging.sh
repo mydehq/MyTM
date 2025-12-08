@@ -80,13 +80,9 @@ _log() {
             color="${YELLOW}"
             icon="⚠️"
             ;;
-        error)
+        error|fatal)
             color="${RED}"
             icon="✗"
-            ;;
-        fatal)
-            color="${RED}"
-            icon="❌"
             ;;
         ask)
             color="${YELLOW}"
@@ -102,7 +98,13 @@ _log() {
             ;;
     esac
 
-    _tab; echo -e "${color}${icon}${NC} ${bold}${message}${NC}" >&2
+    if [ "$level" = "fatal" ]; then
+        bold="${BOLD}"
+        _tab; echo -e "${color}${icon} ${bold}${message}${NC}" >&2
+    else
+        _tab; echo -e "${color}${icon}${NC} ${bold}${message}${NC}" >&2
+    fi
+
 
     # Exit for fatal
     [ "$level" = "fatal" ] && exit 1
@@ -118,4 +120,3 @@ log.success() { _log -l success "$@"; }
 log.warn()    { _log -l warn "$@"; }
 log.error()   { _log -l error "$@"; }
 log.fatal()   { _log -l fatal "$@"; }
-
