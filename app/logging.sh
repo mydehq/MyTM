@@ -46,7 +46,7 @@ log.tab.reset() {
 # Usage: _log -l <level> [-b|--bold] <message>
 # Levels: debug, info, success, warn, error, fatal
 _log() {
-    local level="" bold="" message="" color="" icon=""
+    local level="" bold_flag=false bold="" message="" color="" icon=""
 
     # Parse arguments
     while [ "$#" -gt 0 ]; do
@@ -56,7 +56,7 @@ _log() {
                 shift 2
                 ;;
             -b|--bold)
-                bold="${BOLD}"
+                bold_flag=true
                 shift
                 ;;
             *)
@@ -66,7 +66,7 @@ _log() {
         esac
     done
 
-    # Set color and icon based on level
+    # Set config based on level
     case "$level" in
         info)
             color="${BLUE}"
@@ -80,7 +80,12 @@ _log() {
             color="${YELLOW}"
             icon="⚠️"
             ;;
-        error|fatal)
+        error)
+            color="${RED}"
+            icon="✗"
+            ;;
+        fatal)
+            bold_flag=true
             color="${RED}"
             icon="✗"
             ;;
@@ -97,6 +102,10 @@ _log() {
             icon=" "
             ;;
     esac
+
+    if $bold_flag; then
+        bold="${BOLD}"
+    fi
 
     # Handle leading newlines - print them before indentation
     local leading_newlines=""
