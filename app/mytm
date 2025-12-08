@@ -3,7 +3,9 @@
 # MyTM Package Builder
 # Builds theme packages & generates index.json
 
-# Determine project root directory
+
+#------------ Determine Root ----------
+
 SCRIPT_DIR="$(dirname "${BASH_SOURCE[0]}")"
 
 if [[ "$(basename "$PWD")" == "app" ]]; then
@@ -23,18 +25,18 @@ TEMP_DIR="$PROJECT_ROOT/.tmp"
 HASH_ALGO="sha256"
 MAX_ARCHIVE_VERSIONS=10
 
-#------------ functions ------------------
-
-# Source utility functions
-source "$SCRIPT_DIR/logging.sh"
-source "$SCRIPT_DIR/.utils.sh"
-source "$SCRIPT_DIR/validation.sh"
-
 if [ -n "$XDG_CACHE_HOME" ]; then
   CACHE_DIR="$XDG_CACHE_HOME/mytm"
 else
   CACHE_DIR="$HOME/.cache/mytm"
 fi
+
+#------------ Functions ------------------
+
+# Source utility functions
+source "$SCRIPT_DIR/logging.sh"
+source "$SCRIPT_DIR/.utils.sh"
+source "$SCRIPT_DIR/validation.sh"
 
 show-help() {
   cat <<EOF
@@ -118,7 +120,7 @@ while [[ $# -gt 0 ]]; do
 done
 
 
-#------ Setup Environment --------
+#---------- Setup Environment ------------
 
 log.info -b "Checking up environment..."
 log.tab.inc
@@ -251,6 +253,7 @@ log.tab.reset
 log.success -b "Environment setup complete\n"
 
 #-------------- Package Themes --------------
+
 log.info -b "Packaging themes..."
 log.tab.inc
 
@@ -273,9 +276,11 @@ for theme_dir in "${INPUT_DIR}"/*; do
         log.fatal "Directory Invalid. Please check"
     fi
 
-    # Extract Theme Info
-    theme_yml="$theme_dir/theme.yml"
 
+    #---------- Extract/Build Theme & Archive Info ------------
+
+    # Extract theme info
+    theme_yml="$theme_dir/theme.yml"
     theme_name="$(basename "$theme_dir")" || log.fatal "Failed to extract theme name"
     theme_version="$(get-theme-ver "${theme_dir}/theme.yml")" || log.fatal "Failed to extract theme version"
 
@@ -284,12 +289,12 @@ for theme_dir in "${INPUT_DIR}"/*; do
     archive_dir="${OUTPUT_DIR}/$theme_name"
     archive_path="${archive_dir}/${archive_name}"
 
+
+    #-------- Generate theme archive, hash ----------
+
     # Create archive directory
     mkdir -p "$archive_dir" || log.fatal "Failed to create directory: '$archive_dir'"
     log.success "Created theme directory..."
-
-
-    #-------- Build theme archive ----------
 
     tar -czf "$archive_path" -C "$theme_dir" . || {
         log.fatal "Failed to package archive: '$theme_name'"
@@ -343,6 +348,7 @@ for theme_dir in "${INPUT_DIR}"/*; do
 
 
     # ----------- Update theme tracking ------------
+
     added_theme_archives+=("$archive_path")
     ((added_theme_count++))
 
@@ -358,7 +364,9 @@ log.info -b "Cleaning up..."
 cleanup
 log.success -b "Cleanup Complete\n"
 
-# Show file sizes
+
+#--------------- Show Summary ------------
+
 echo -e "${BLUE}============= Summary ==============$NC\n"
 show-repo-size "$OUTPUT_DIR"
 
