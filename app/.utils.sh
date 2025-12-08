@@ -3,51 +3,6 @@
 # MyThemes Utility Functions
 # Shared utilities for theme management scripts
 
-#------------ Colors ------------------
-
-export RED='\033[0;31m'
-export GREEN='\033[0;32m'
-export YELLOW='\033[1;33m'
-export BLUE='\033[0;34m'
-export NC='\033[0m'
-
-#------------ Logging Functions ------------------
-
-# Log indentation using numeric levels
-export _LOG_TAB=0
-
-_tab() {
-    local indent=""
-    if [ "$_LOG_TAB" -gt 0 ]; then
-        for ((i=0; i<$_LOG_TAB; i++)); do
-            indent+="    "
-        done
-        printf "%s" "$indent"
-    fi
-}
-
-log.tab.inc() {
-    _LOG_TAB=$((_LOG_TAB + 1))
-}
-
-log.tab.dec() {
-    _LOG_TAB=$((_LOG_TAB - 1))
-    [ "$_LOG_TAB" -lt 0 ] && _LOG_TAB=0
-}
-
-log.tab.reset() {
-    _LOG_TAB=0
-}
-
-# Actual utils
-log.debug()   { _tab; printf "" >/dev/null; }
-log.info()    { _tab; echo -e "${BLUE}!${NC} $1" >&2; }
-log.success() { _tab; echo -e "${GREEN}✔️${NC} $1" >&2; }
-log.warn()    { _tab; echo -e "${YELLOW}⚠️ ${NC} $1" >&2; }
-log.error()   { _tab; echo -e "${RED}❌${NC} $1" >&2; }
-log.fatal()   { _tab; echo -e "${RED}❌ $1 ${NC}" >&2; exit 1; }
-
-
 #------------ Utility Functions ------------------
 
 has-cmd() {
@@ -72,6 +27,7 @@ has-cmd() {
   # Return 0 if all found, 1 if any were missing
   return "$missing"
 }
+
 get-conf() {
     local key json_flag=""
     local conf_file="$CONFIG_FILE" root_key=".packaging"
