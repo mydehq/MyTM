@@ -1,9 +1,9 @@
 
 # Usage: validate-theme-dir <theme_dir>
-# WIP
 validate-theme-dir() {
    local theme_dir="$1"
    local theme_yml="$theme_dir/theme.yml"
+   local has_errors=0
 
    # Validate theme directory
    ! [ -d "$theme_dir" ] && {
@@ -23,21 +23,65 @@ validate-theme-dir() {
       log.error "theme.yml is empty in '$theme_dir'."
       return 1
    }
-   log.success "Has valid Mainfest"
+   log.success "Has valid Manifest"
 
-   # --------------- Check values --------------
-   # Extract ver
-   get-theme-ver "$theme_yml" >/dev/null || {
-        log.error "Theme version not found"
-        return 1
-   }
+   # --------------- Check required fields --------------
 
-   # check for semantic versioning
-   get-theme-ver "$theme_yml" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+$' || {
-        log.error "Theme version is not a semantic version"
-        return 1
-   }
-   log.success "Has valid version"
+   # 1. Check version field
+   local theme_version
+   theme_version="$(yq '.version' "$theme_yml" 2>/dev/null | tr -d '\0')"
+
+   if [ -z "$theme_version" ] || [ "$theme_version" == "null" ]; then
+        log.error "Missing required field: 'version'"
+        has_errors=1
+   elif ! echo "$theme_version" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+$'; then
+        log.error "Invalid 'version': must be semantic version X.Y.Z"
+        has_errors=1
+   else
+        log.success "Has valid version"
+   fi
+
+   # 2. Check author field
+   local theme_author
+   theme_author="$(yq '.author' "$theme_yml" 2>/dev/null | tr -d '\0')"
+
+   if [ -z "$theme_author" ] || [ "$theme_author" == "null" ]; then
+        log.error "Missing required field: 'author'"
+        has_errors=1
+   else
+        log.success "Has valid author"
+   fi
+
+   # 3. Check url field
+   local theme_url
+   theme_url="$(yq '.url' "$theme_yml" 2>/dev/null | tr -d '\0')"
+
+   if [ -z "$theme_url" ] || [ "$theme_url" == "null" ]; then
+        log.error "Missing required field: 'url'"
+        has_errors=1
+   elif ! echo "$theme_url" | grep -qE '^https?://'; then
+        log.error "Invalid 'url': must start with http:// or https://"
+        has_errors=1
+   else
+        log.success "Has valid URL"
+   fi
+
+   # 4. Check config key exists and is an object
+   local config_check
+   config_check="$(yq '.config' "$theme_yml" 2>/dev/null)"
+
+   if [ -z "$config_check" ] || [ "$config_check" == "null" ]; then
+        log.error "Missing required field: 'config'"
+        has_errors=1
+   elif ! yq -e '.config | type' "$theme_yml" 2>/dev/null | grep -q 'map'; then
+        log.error "Invalid 'config' field: must be an object/map"
+        has_errors=1
+   else
+        log.success "Has valid config object"
+   fi
+
+   # Return based on whether errors were found
+   return $has_errors
 }
 
 
