@@ -98,7 +98,7 @@ _log() {
             ;;
         *)
             color="${NC}"
-            icon="?"
+            icon=" "
             ;;
     esac
 

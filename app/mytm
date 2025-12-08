@@ -17,6 +17,8 @@ fi
 INPUT_DIR="$PROJECT_ROOT/themes"
 OUTPUT_DIR="$PROJECT_ROOT/dist"
 CONFIG_FILE="$PROJECT_ROOT/config.yml"
+VALIDATE_ONLY=false
+VALIDATE_THEME=""
 TEMP_DIR="$PROJECT_ROOT/.tmp"
 HASH_ALGO="sha256"
 MAX_ARCHIVE_VERSIONS=10
@@ -44,15 +46,20 @@ DESC:
 
 USAGE:
     $0 [OPTIONS]
+    $0 -vt <theme_name> [-i <input_dir>]
 
 FLAGS:
-    -h, --help                Show this help message
-    -i, --input-dir DIR       Override input directory from config
-    -o, --output-dir DIR      Override output directory from config
-    -c, --config FILE         Set config file (default: $CONFIG_FILE)
-    -rt,--repo-template FILE  Set README template file (default: $README_TEMPLATE)
+    -h,  --help                Show this help message
+    -i,  --input-dir DIR       Override input directory from config
+    -o,  --output-dir DIR      Override output directory from config
+    -c,  --config FILE         Set config file (default: $CONFIG_FILE)
+    -vt, --validate-theme      Validate given/all theme dirs (inside input-dir)
+
+EXAMPLE
 EOF
 }
+
+cleanup() { rm -rf "$TEMP_DIR"; }
 
 
 # ---------- Start script ----------
@@ -93,6 +100,15 @@ while [[ $# -gt 0 ]]; do
     CONFIG_FILE="$2"
     shift 2
     ;;
+   -vt|--validate-theme)
+    VALIDATE_ONLY=true
+    if [[ -n "$2" && "$2" != -* ]]; then
+      VALIDATE_THEME="$2"
+      shift 2
+    else
+      shift 1
+    fi
+    ;;
   *)
     log.error "Unknown option: $1"
     show-help
@@ -104,7 +120,7 @@ done
 
 #------ Setup Environment --------
 
-log.info "Checking up environment..."
+log.info -b "Checking up environment..."
 log.tab.inc
 
 req_cmds="yq jq tar awk"
@@ -119,16 +135,74 @@ else
     log.fatal "Input directory does not exist"
 fi
 
-# Create output dir and temp dir
-if mkdir -p "$OUTPUT_DIR" "$TEMP_DIR"; then
-    log.success "Made output dir: $OUTPUT_DIR/"
+# Create temp dir
+if [ -d "$TEMP_DIR" ]; then
+    rm -rf "$TEMP_DIR"
+    log.success "Removed old Temp dir: $TEMP_DIR/"
 else
-    log.fatal "Failed to create output or temp directory"
+    mkdir -p "$TEMP_DIR" || log.fatal "Failed to create Temp dir: $TEMP_DIR/"
+    log.success "Created Temp dir"
+fi
+
+# Create output dir
+if [ "$VALIDATE_ONLY" != "true" ]; then
+    if [ -d "$OUTPUT_DIR" ]; then
+        log.success "Output dir exists: $OUTPUT_DIR/"
+    else
+       if mkdir -p "$OUTPUT_DIR"; then
+           log.success "Made output dir: $OUTPUT_DIR/"
+       else
+           log.fatal "Failed to create output or temp directory"
+       fi
+    fi
+else
+    log.info "Skipping output dir creation"
 fi
 
 
-# Set up cleanup trap
-cleanup() { rm -rf "$TEMP_DIR"; }
+#------------- Only validation check -------------
+
+if [ "$VALIDATE_ONLY" == "true" ]; then
+
+    log.tab.reset
+    log.success -b "Environment setup complete\n"
+
+    log.info -b "Starting Validation..."
+    log.tab.inc
+
+    validation_failed=0
+
+    if [[ -n "$VALIDATE_THEME" ]]; then
+        log.info "Validating theme: $VALIDATE_THEME"
+        log.tab.inc
+        if ! validate-theme-dir "$INPUT_DIR/$VALIDATE_THEME"; then
+            validation_failed=1
+        fi
+        log.tab.dec
+    else
+        for theme_dir in "$INPUT_DIR"/*; do
+            theme_name="$(basename "$theme_dir")"
+            log.info -b "Validating theme: $theme_name"
+
+            log.tab.inc
+            if ! validate-theme-dir "$theme_dir"; then
+                validation_failed=1
+            fi
+            log.tab.dec
+            echo
+        done
+    fi
+
+    log.tab.reset
+
+    if [ "$validation_failed" -eq 1 ]; then
+        log.error -b "Validation failed. Please fix the errors above."
+        exit 1
+    else
+        log.success -b "${GREEN}Validation complete, Everything seems good.${NC}"
+        exit 0
+    fi
+fi
 
 
 # ------------ Index.json check ------------
@@ -174,10 +248,10 @@ jq -n \
 log.success "Done"
 
 log.tab.reset
-log.success "Environment setup complete\n"
+log.success -b "Environment setup complete\n"
 
 #-------------- Package Themes --------------
-log.info "Packaging themes..."
+log.info -b "Packaging themes..."
 log.tab.inc
 
 added_theme_archives=()
@@ -277,12 +351,12 @@ for theme_dir in "${INPUT_DIR}"/*; do
 done
 
 log.tab.reset
-log.success "${GREEN}Packaging complete${NC}\n"
+log.success -b "${GREEN}Packaging complete${NC}\n"
 
 # ------- cleanup -----------
-log.info "Cleaning up..."
+log.info -b "Cleaning up..."
 cleanup
-log.success "Cleanup Complete\n"
+log.success -b "Cleanup Complete\n"
 
 # Show file sizes
 echo -e "${BLUE}============= Summary ==============$NC\n"

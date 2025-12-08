@@ -90,7 +90,7 @@ jobs:
         id: package
         run: |
           chmod +x scripts/package.sh
-          bash scripts/package.sh
+          bash app/mytm
 
       - name: Publish themes and index
         run: |
