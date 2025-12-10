@@ -71,26 +71,40 @@ package-theme() {
 }
 
 show-list() {
-    local color="$1"
-    shift
-    local archives=("$@")
+    local color="$1" && shift
+    local items=("$@")
 
-    if [ ${#archives[@]} -gt 0 ]; then
+    if [ ${#items[@]} -gt 0 ]; then
         # Group versions by theme
         declare -A theme_versions
-        for archive in "${archives[@]}"; do
-            theme_name=$(basename "$(dirname "$archive")")
-            version=$(basename "$archive" .tar.gz)
+
+        for item in "${items[@]}"; do
+            # If a path
+            if [[ "$item" == *"/"* ]]; then
+                theme_name=$(basename "$(dirname "$item")")
+                version=$(basename "$item" .tar.gz)
+            else
+                # A theme name
+                theme_name="$item"
+                version=""
+            fi
 
             if [ -z "${theme_versions[$theme_name]}" ]; then
                 theme_versions[$theme_name]="$version"
             else
-                theme_versions[$theme_name]="${theme_versions[$theme_name]}, $version"
+                if [ -n "$version" ]; then
+                    theme_versions[$theme_name]="${theme_versions[$theme_name]}, $version"
+                fi
             fi
         done
 
         for theme_name in "${!theme_versions[@]}"; do
-            echo -e "   - ${color}$theme_name:${NC} ${theme_versions[$theme_name]}"
+             local v_str="${theme_versions[$theme_name]}"
+             if [ -z "$v_str" ]; then
+                 echo -e "   - ${color}$theme_name${NC}"
+             else
+                 echo -e "   - ${color}$theme_name:${NC} $v_str"
+             fi
         done
         echo
     fi
@@ -298,6 +312,9 @@ added_theme_count=0
 updated_themes=()
 updated_theme_count=0
 
+deleted_themes=()
+deleted_theme_count=0
+
 # Loop through all theme dirs
 for theme_dir in "${INPUT_DIR}"/*; do
 
@@ -491,7 +508,8 @@ if [ -f "$OUTPUT_DIR/index.json" ]; then
                 rm -rf "${OUTPUT_DIR:?}/${theme:?}" || log.error "Couldn't Remove theme dir: $theme"
             fi
 
-            log.success "Removed"
+            log.success "Purged"
+            deleted_themes+=("$theme") && ((deleted_theme_count++))
         fi
     done
     log.tab.dec
@@ -527,3 +545,9 @@ show-list "$GREEN" "${added_themes[@]}"
 
 log.info "${BLUE}Themes Updated: ${updated_theme_count}$NC"
 show-list "$BLUE" "${updated_themes[@]}"
+
+
+#------------ Purged Themes -------------
+
+log.error "${RED}Themes Purged: ${deleted_theme_count}$NC"
+show-list "$RED" "${deleted_themes[@]}"
