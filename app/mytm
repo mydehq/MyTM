@@ -276,24 +276,24 @@ if [ -f "${OUTPUT_DIR}/index.json" ]; then
     log.tab.inc
     if validate-json "$OUTPUT_DIR/index.json"; then
         # Check Schema Version
-        schema_ver=$(jq -r '.schema_ver // 0' "$OUTPUT_DIR/index.json")
+        schema_ver=$(jq -r '.schema_ver // .schema_version // 0' "$OUTPUT_DIR/index.json")
 
-        if [ "$schema_ver" -eq 0 ]; then
+        if [ "$schema_ver" == "0" ]; then
             log.tab.dec
             log.warn "Index Schema not found"
-            rm "$OUTPUT_DIR/index.json" || log.fatal "Failed to remove invalid Index"
-            log.success "Removed invalid Index"
+            rm -rf "${OUTPUT_DIR:?}/**" || log.fatal "Failed to remove invalid repo"
+            log.success "Removed invalid repo"
         elif [ "$schema_ver" != "2" ]; then
             log.tab.dec
             log.warn "Index Schema is not v2."
-            rm "$OUTPUT_DIR/index.json" || log.fatal "Failed to remove invalid Index"
-            log.success "Removed old Index"
+            rm -rf "${OUTPUT_DIR:?}/**" || log.fatal "Failed to remove invalid repo"
+            log.success "Removed old repo"
         else
             log.tab.dec
             log.success "Index is valid"
             # Backup Themes from valid index
             current_themes="$(jq -c '.themes' "$OUTPUT_DIR/index.json")"
-            action_msg="Updating..."
+            action_msg="Updating release time..."
         fi
     else
         log.tab.dec
