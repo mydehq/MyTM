@@ -7,7 +7,7 @@ on:
       - .github/workflows/publish.yml
       - "config.yml"
       - "themes/**"
-      - "app/mytm"
+      - "app/**"
 
   workflow_dispatch:
 
