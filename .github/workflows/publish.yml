@@ -41,7 +41,7 @@ jobs:
 
       - name: Configure Git Credentials (Initial setup)
         run: |
-          git config user.name "soymadip"
+          git config user.name "Soumadip Das"
           git config user.email "84225810+soymadip@users.noreply.github.com"
 
       - name: Check & create publish branch
@@ -95,7 +95,7 @@ jobs:
           # Navigate into the nested repository
           cd "$OUTPUT_DIR"
 
-          git config user.name "soymadip"
+          git config user.name "Soumadip Das"
           git config user.email "84225810+soymadip@users.noreply.github.com"
 
           # Add all changed files
