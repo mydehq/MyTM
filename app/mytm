@@ -19,11 +19,11 @@ fi
 INPUT_DIR="$PROJECT_ROOT/themes"
 OUTPUT_DIR="$PROJECT_ROOT/dist"
 CONFIG_FILE="$PROJECT_ROOT/config.yml"
-VALIDATE_ONLY=false
-VALIDATE_THEME=""
 TEMP_DIR="$PROJECT_ROOT/.tmp"
 HASH_ALGO="sha256"
 MAX_ARCHIVE_VERSIONS=10
+VALIDATE_ONLY=false
+VALIDATE_THEME=""
 
 if [ -n "$XDG_CACHE_HOME" ]; then
   CACHE_DIR="$XDG_CACHE_HOME/mytm"
@@ -32,6 +32,8 @@ else
 fi
 
 #------------ Functions ------------------
+
+export INPUT_DIR OUTPUT_DIR CONFIG_FILE VALIDATE_ONLY VALIDATE_THEME TEMP_DIR HASH_ALGO MAX_ARCHIVE_VERSIONS
 
 # Source utility functions
 source "$SCRIPT_DIR/logging.sh"
@@ -147,6 +149,10 @@ while [[ $# -gt 0 ]]; do
     CONFIG_FILE="$2"
     shift 2
     ;;
+  -mv|--max-versions)
+    MAX_ARCHIVE_VERSIONS="$2"
+    shift 2
+    ;;
    -vt|--validate-theme)
     VALIDATE_ONLY=true
     if [[ -n "$2" && "$2" != -* ]]; then
@@ -245,6 +251,7 @@ if [ "$VALIDATE_ONLY" == "true" ]; then
         log.fatal -b "Validation failed. Please fix the errors above."
     else
         log.success -b "${GREEN}Validation complete, Everything seems good.${NC}"
+        exit 0
     fi
 fi
 
@@ -436,6 +443,39 @@ else
         fi
 
 
+        #------------ Cleanup Old Versions -------------------
+
+        if [ "$(jq '. | length' "$versions_file")" -gt "$MAX_ARCHIVE_VERSIONS" ]; then
+
+            # Get list of versions to delete (skip first N)
+            versions_to_drop=$(jq -r --argjson max "$MAX_ARCHIVE_VERSIONS" '.[$max:] | .[].ver' "$versions_file")
+
+            log.debug "Cleaning up old versions (Limit: $MAX_ARCHIVE_VERSIONS)..."
+            if [ -n "$versions_to_drop" ]; then
+                dropped_versions=()
+                for ignored_ver in $versions_to_drop; do
+                    old_archive_path="${archive_dir}/${ignored_ver}.tar.gz"
+                    if [ -f "$old_archive_path" ]; then
+                        rm -f "$old_archive_path"
+                        dropped_versions+=("$ignored_ver")
+                    else
+                        log.warn " Old archive not found: $ignored_ver"
+                    fi
+                done
+
+                if [ ${#dropped_versions[@]} -gt 0 ]; then
+                    printf -v joined_versions "%s, " "${dropped_versions[@]}"
+                    log.success "Removed old version(s): ${joined_versions%, }"
+                fi
+
+                # Update .versions.json to keep only top N
+                yq -i -o=json 'with(.; . = .[0:env(MAX_ARCHIVE_VERSIONS)])' "$versions_file" || log.error "Failed to trim versions index"
+            fi
+        else
+            log.success "No old versions to clean up"
+        fi
+
+
         #------------ Create/Update Index Entry --------------
 
         export YQI_THM="$theme_name" \
@@ -451,7 +491,7 @@ else
             _update_msg="Added to Repository Index"
         elif [ "$_existing_version" != "$theme_version" ]; then
             _should_update=true
-            _update_msg="Updated Repository Index: ${_existing_version} → ${theme_version}"
+            _update_msg="Updated Repository Index: ${_existing_version} -> ${theme_version}"
         else
             log.success "Already in Repository Index"
         fi
@@ -529,9 +569,8 @@ else
     log.error "Failed to clean up temporary files"
 fi
 
-
 log.tab.dec
-log.success "Cleanup Complete\n"
+log.success -b "Cleanup Complete\n"
 
 
 #------------------------------- Show Summary ----------------------------------
