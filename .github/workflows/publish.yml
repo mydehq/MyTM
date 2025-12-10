@@ -88,9 +88,7 @@ jobs:
 
       - name: Package themes
         id: package
-        run: |
-          chmod +x scripts/package.sh
-          bash app/mytm
+        run: bash app/mytm
 
       - name: Publish themes and index
         run: |
