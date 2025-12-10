@@ -72,7 +72,7 @@ jobs:
             fi
 
             # Switch back to main branch
-            git checkout -
+            git checkout main
           fi
 
       - name: Checkout publish branch into output directory
