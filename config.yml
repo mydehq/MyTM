@@ -1,50 +1,22 @@
 packaging:
   input-dir: "themes"
   output-dir: "dist"
-  publish-branch: "repo"
+  max-versions: 10
 
-  archive:
-    # Max num of versions to keep of each theme
-    max-versions: 10
+  templates:
+    readme: "src/readme-template.md"
+    index-html: "src/index-template.html"
+
+  repo:
+    name: "official"
+    branch: "repo"
 
     # Direct download urls of theme files
     # Can add multiple mirrors, will be tried in order
     # MUST INCLUDE:
     #        ${{theme}}: theme name
     #        ${{file}}:  filename (version.tar.gz)
-    src-urls:
-      - "https://repo-mutm.netlify.app/${{theme}}/${{file}}"
+    mirrors:
+      - "https://my-tm.vercel.app/${{theme}}/${{file}}"
+      - "https://mytm-repo.netlify.app/${{theme}}/${{file}}"
       - "https://github.com/mydehq/mytm/raw/refs/heads/repo/${{theme}}/${{file}}"
-
-  repo:
-    name: "official"
-
-    # index.html content.
-    # set to false to disable generation
-    index-html: false
-
-    # README.md content.
-    # set to false to disable generation
-    readme-md: |
-
-      <div align="center">
-
-      ![MyTM Logo](https://github.com/mydehq/MyTM/raw/refs/heads/main/src/icon.png)
-
-      # MyTM Theme Repo
-
-      This branch contains packaged theme archives of ${{mytm-repo}} themes.
-
-      </div>
-
-      ## Themes
-
-      Available themes:
-
-        ${{themes}}
-
-      ---
-
-      <small align="center">
-        Generated automatically from the main branch.
-      </small>

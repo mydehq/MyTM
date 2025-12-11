@@ -125,7 +125,7 @@ echo -e "\n==============${NC} ${YELLOW}MyTM Packager${NC} ==============\n"
 
 INPUT_DIR="$(get-conf "input-dir")" || exit 1
 OUTPUT_DIR="$(get-conf "output-dir")" || exit 1
-MAX_ARCHIVE_VERSIONS="$(get-conf "archive.max-versions")" || exit 1
+MAX_ARCHIVE_VERSIONS="$(get-conf "max-versions")" || exit 1
 
 #-------------- parse arguments ------------------
 
@@ -266,8 +266,9 @@ log.tab.inc
 # ------------ Index.json check ------------
 
 repo_name="$(get-conf "repo.name")" || exit 1
+repo_branch="$(get-conf "repo.branch")" || exit 1
 repo_release_time="$(date +%s)"
-repo_src_urls="$(get-conf -j "archive.src-urls")" || exit 1
+repo_mirrors="$(get-conf -j "repo.mirrors")" || exit 1
 
 current_themes="{}"
 action_msg="Creating..."
@@ -319,7 +320,7 @@ log.info "$action_msg"
 if create-repo-index \
         -rn "$repo_name" \
         -rt "$repo_release_time" \
-        -su "$repo_src_urls" \
+        -ml "$repo_mirrors" \
         -th "$current_themes" \
         -o  "${OUTPUT_DIR}/index.json"; then
 

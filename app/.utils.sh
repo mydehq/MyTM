@@ -351,7 +351,7 @@ validate-json() {
 create-repo-index() {
     local repo_name=""
     local repo_release_time=""
-    local repo_src_urls=""
+    local repo_mirrors=""
     local theme_object=""
     local output_file=""
 
@@ -366,8 +366,8 @@ create-repo-index() {
                 repo_release_time="$2"
                 shift 2
                 ;;
-            -su|--src-urls)
-                repo_src_urls="$2"
+            -ml|--mirror-list)
+                repo_mirrors="$2"
                 shift 2
                 ;;
             -th|--theme-obj)
@@ -379,11 +379,11 @@ create-repo-index() {
                 shift 2
                 ;;
             -h|--help)
-                echo "Usage: create-repo-index -rn <repo_name> -rt <release_time> -su <src_urls> [-th <theme_object>] [-o <output_file>]"
+                echo "Usage: create-repo-index -rn <repo_name> -rt <release_time> -ml <mirror_list> [-th <theme_object>] [-o <output_file>]"
                 echo "Flags:"
                 echo "  -rn|--repo-name <repo_name>        Repository name (e.g., 'official')"
                 echo "  -rt|--release-time <timestamp>     Repository release time (UNIX timestamp)"
-                echo "  -su|--src-urls <json_array>        Source URLs as JSON array"
+                echo "  -ml|--mirror-list <json_array>     Source URLs as JSON array"
                 echo "  -th|--theme-obj <json_object>      Theme object as JSON (optional, defaults to {})"
                 echo "  -o|--output-file <file_path>       Output file path (optional, defaults to \$OUTPUT_DIR/index.json)"
                 return 0
@@ -405,7 +405,7 @@ create-repo-index() {
     fi
 
     # Validate required arguments
-    if [ -z "$repo_name" ] || [ -z "$repo_release_time" ] || [ -z "$repo_src_urls" ]; then
+    if [ -z "$repo_name" ] || [ -z "$repo_release_time" ] || [ -z "$repo_mirrors" ]; then
         log.error "Missing required arguments"
         log.error "Use -h or --help for usage information"
         return 1
@@ -413,7 +413,7 @@ create-repo-index() {
 
     # --- 1. Validation Check ---
     # Check if all URLs in the provided JSON array contain ${{theme}} and ${{file}}.
-    if ! echo "$repo_src_urls" | jq -e 'all( .[] ; (contains("${{theme}}") and contains("${{file}}")) )' > /dev/null; then
+    if ! echo "$repo_mirrors" | jq -e 'all( .[] ; (contains("${{theme}}") and contains("${{file}}")) )' > /dev/null; then
         log.fatal "All source URLs must contain \${{theme}} and \${{file}}."
     fi
 
@@ -423,13 +423,13 @@ create-repo-index() {
     jq -n \
         --arg repo_name "$repo_name" \
         --argjson release_time "$repo_release_time" \
-        --argjson repo_src_urls "$repo_src_urls" \
+        --argjson repo_mirrors "$repo_mirrors" \
         --argjson theme_object "$theme_object" \
         '{
             schema_ver: 2,
             repo_name: $repo_name,
             release: $release_time,
-            src_urls: $repo_src_urls,
+            mirrors: $repo_mirrors,
             themes: $theme_object
         }' \
     > "$output_file"

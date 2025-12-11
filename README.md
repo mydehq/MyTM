@@ -24,12 +24,7 @@ Supports gtk, qt, kde, rofi & others through templates
 ```bash
 myctl plugin add mytm
 ```
-
-### Add the repo
-
-```bash
-mytm repo add -n official https://raw.githubusercontent.com/mydehq/mytm/refs/heads/repo/index.json
-```
+This will automatically add `official` repo. it's hosted [here](../tree/repo).
 
 ### Set a theme
 
@@ -117,24 +112,27 @@ Also `repo.name` will be added in config.yml.
 
 Available options, Note that all are under `packaging` key:
 
-1. `input-dir`: absolute/relative path of dir containing themes.
-2. `output-dir`: absolute/relative path of dir to output processed theme files.
-3. `publish-branch`: Branch Name to upload the packaged themes.
+1. `input-dir`: absolute/relative path of input themes dir.
+2. `output-dir`: absolute/relative path of output dist dir.
+3. `max-versions`: maximum number of versions to keep per theme.
 
-4. `archive.max-versions`: maximum number of versions to keep (default: 10)
-5. `archive.src-urls`:
-   - Array of direct URLs to repo's files.  
-     Use `${{theme}}` & `${{file}}` in place of theme name & file name accordingly.
-   - 1st URL should be of this repo.  
-     If 1st one is not accessible, others will be tried in order from top to bottom.
+4. `repo.name`: name/id of the repo, any string except 'official'. 
+5. `repo.branch`: Git branch where themes will be published (if using CI/CD).
+6. `repo.mirrors`:
+   - Array of direct download URLs.
+   - Use `${{theme}}` & `${{file}}` variables.
+   - Will be tried in order if 1st mirror is not reachable.
 
-6. `repo.name`: name/id of the repo. Can be any string except 'official'
-7. `repo.index-html`:
-   - If value is false, no index.html will be generated.
-   - Other than any string will be added as index.html's body.
-   - Some varibles are available:
-     1. `${{mytm-repo}}`: URL of the official MyTM repo. This has to be somewhere in body or packager will through error
-     2. `${{themes}}`: List of themes.
+7. `templates.readme`: Path to README.md template file.
+8. `templates.index-html`: Path to index.html template file.
+
+   **Available Variables in Templates:**
+   - `${{repo-name}}`: Repository name.
+   - `${{last-updated}}`: Time of generation.
+   - `${{max-versions}}`: Configured max versions.
+   - `${{mirrors}}`: Formatted list of mirrors (HTML list for index.html, Markdown list for README).
+   - `${{mytm-repo}}`: Link to the official MyTM repository.
+   - `${{themes}}`: The table of generated themes.
 
 ### Add Themes
 
