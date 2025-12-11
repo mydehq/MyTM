@@ -18,7 +18,7 @@ validate-theme-dir() {
         log.error "Theme dir '$theme_dir' does not exist"
         return 1
    fi
-   
+
    if [ ! -d "$theme_dir" ]; then
         log.error "'$theme_dir' is not a directory"
         return 1
@@ -206,30 +206,30 @@ validate-index() {
 
 # Usage: validate-versions-json [versions_json_path]
 validate-versions-json() {
-    # Validates the .versions.json:
+    # Validates the versions.json:
     #   - JSON is an array
     #   - Each entry has: ver (string), hash.value (string), hash.algo (string)
     #   - For each version, an archive "<ver>.tar.gz" exists in the same directory as the JSON
     #   - Hash of each archive matches the recorded hash
 
-    local versions_json_path="${1:-${PWD}/.versions.json}"
+    local versions_json_path="${1:-${PWD}/versions.json}"
     local has_errors=0
 
     # Basic existence and size checks
     if ! [ -f "$versions_json_path" ]; then
-        log.error ".versions.json not found at '$versions_json_path'"
+        log.error "versions.json not found at '$versions_json_path'"
         return 1
     fi
 
     if ! [ -s "$versions_json_path" ]; then
-        log.error ".versions.json is empty"
+        log.error "versions.json is empty"
         return 1
     fi
-    log.success "Found .versions.json"
+    log.success "Found versions.json"
 
     # Validate JSON parse
     if ! jq -e . "$versions_json_path" >/dev/null 2>&1; then
-        log.error ".versions.json contains invalid JSON"
+        log.error "versions.json contains invalid JSON"
         return 1
     fi
     log.success "Has valid JSON"

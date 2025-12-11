@@ -34,6 +34,7 @@ log.tab.inc() {
 log.tab.dec() {
     _LOG_TAB=$((_LOG_TAB - 1))
     [ "$_LOG_TAB" -lt 0 ] && _LOG_TAB=0
+    return 0
 }
 
 log.tab.reset() {

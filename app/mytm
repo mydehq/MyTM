@@ -25,6 +25,9 @@ MAX_ARCHIVE_VERSIONS=10
 VALIDATE_ONLY=false
 VALIDATE_THEME=""
 
+MYTM_VERSION="NULL"
+MYTM_URL="https://github.com/mydehq/mytm"
+
 if [ -n "$XDG_CACHE_HOME" ]; then
   CACHE_DIR="$XDG_CACHE_HOME/mytm"
 else
@@ -120,7 +123,6 @@ echo -e "\n==============${NC} ${YELLOW}MyTM Packager${NC} ==============\n"
 
 # ---------- override confs from config --------
 
-MyTM_VERSION="NULL"
 INPUT_DIR="$(get-conf "input-dir")" || exit 1
 OUTPUT_DIR="$(get-conf "output-dir")" || exit 1
 MAX_ARCHIVE_VERSIONS="$(get-conf "archive.max-versions")" || exit 1
@@ -405,9 +407,9 @@ else
         log.success "Generated $HASH_ALGO hash"
 
 
-        #-------------- Update .versions.json ----------------
+        #-------------- Update versions.json ----------------
 
-        versions_file="${OUTPUT_DIR}/$theme_name/.versions.json"
+        versions_file="${OUTPUT_DIR}/$theme_name/versions.json"
 
         if [ ! -f "$versions_file" ]; then
             echo "[]" > "$versions_file"
@@ -485,7 +487,7 @@ else
                     log.success "Removed old version(s): ${joined_versions%, }"
                 fi
 
-                # Update .versions.json to keep only top N
+                # Update versions.json to keep only top N
                 yq -i -o=json 'with(.; . = .[0:env(MAX_ARCHIVE_VERSIONS)])' "$versions_file" || log.error "Failed to trim versions index"
             fi
         else

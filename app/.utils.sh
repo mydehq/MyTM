@@ -153,11 +153,11 @@ show-repo-size() {
         total_bytes=$((total_bytes + index_size))
     fi
 
-    # Calculate all theme files (archives and .versions.json)
+    # Calculate all theme files (archives and versions.json)
     while IFS= read -r -d '' file; do
         local size=$(get-file-size "$file")
         total_bytes=$((total_bytes + size))
-    done < <(find "$output_dir" -type f \( -name "*.tar.gz" -o -name ".versions.json" \) -print0)
+    done < <(find "$output_dir" -type f \( -name "*.tar.gz" -o -name "versions.json" \) -print0)
 
     # Show total repository size
     echo -e "Repo Size = $(format-size "$total_bytes")"
