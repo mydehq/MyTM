@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="https://github.com/mydehq/MyTM/blob/main/src/icon.png?raw=true" alt="MyTM Logo" width="70">
+  <img src="https://raw.githubusercontent.com/mydehq/MyTM/refs/heads/main/src/icon.png" alt="MyTM Logo" width="70">
   <h1><b>MyTM Theme Repo</b></h1>
 </div>
 
@@ -11,7 +11,7 @@
 
 <details>
   <summary>View Mirrors</summary>
-  ${{src-urls}}
+  ${{mirrors}}
 </details>
 
 ## Available Themes
