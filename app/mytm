@@ -14,11 +14,12 @@ else
   PROJECT_ROOT="."
 fi
 
-#--------------- Fallback Config ----------------
+#--------------- Default Config ----------------
 
 INPUT_DIR="$PROJECT_ROOT/themes"
 OUTPUT_DIR="$PROJECT_ROOT/dist"
 CONFIG_FILE="$PROJECT_ROOT/config.yml"
+PUBLISH_BRANCH="repo"
 TEMP_DIR="$PROJECT_ROOT/.tmp"
 HASH_ALGO="sha256"
 MAX_ARCHIVE_VERSIONS=10
@@ -119,7 +120,7 @@ show-list() {
 # ---------- Start script ----------
 
 clear -x
-echo -e "\n==============${NC} ${YELLOW}MyTM Packager${NC} ==============\n"
+log -b "\n================= ${YELLOW}MyTM Packager${NC} =================\n"
 
 
 #-------------- parse arguments ------------------
@@ -150,6 +151,10 @@ while [[ $# -gt 0 ]]; do
     ARG_MAX_ARCHIVE_VERSIONS="$2"
     shift 2
     ;;
+        -pb|--publish-branch)
+            ARG_PUBLISH_BRANCH="$2"
+            shift 2
+            ;;
    -vt|--validate-theme)
     VALIDATE_ONLY=true
     if [[ -n "$2" && "$2" != -* ]]; then
@@ -172,10 +177,10 @@ done
 
 # Arg > Config > Default
 CONFIG_FILE="${ARG_CONFIG_FILE:-$CONFIG_FILE}"
-INPUT_DIR="${ARG_INPUT_DIR:-$(get-conf -s "input-dir" || echo "$INPUT_DIR")}"
-OUTPUT_DIR="${ARG_OUTPUT_DIR:-$(get-conf -s "output-dir" || echo "$OUTPUT_DIR")}"
-MAX_ARCHIVE_VERSIONS="${ARG_MAX_ARCHIVE_VERSIONS:-$(get-conf -s "max-versions" || echo "$MAX_ARCHIVE_VERSIONS")}"
-
+INPUT_DIR="${ARG_INPUT_DIR:-$(get-conf -s "input-dir" -d "$INPUT_DIR")}"
+OUTPUT_DIR="${ARG_OUTPUT_DIR:-$(get-conf -s "output-dir" -d "$OUTPUT_DIR")}"
+MAX_ARCHIVE_VERSIONS="${ARG_MAX_ARCHIVE_VERSIONS:-$(get-conf -s "max-versions" -d "$MAX_ARCHIVE_VERSIONS")}"
+PUBLISH_BRANCH="${ARG_PUBLISH_BRANCH:-$(get-conf -s "publish-branch" -d "$PUBLISH_BRANCH")}"
 
 #------------------------------ Setup Environment ----------------------------------
 

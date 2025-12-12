@@ -29,12 +29,12 @@ has-cmd() {
 }
 
 get-conf() {
-    local key json_flag=""
+    local key value json_flag="" default_value=""
     local conf_file="$CONFIG_FILE" root_key=".packaging"
     local silent_mode=false
+    local yq_status
 
-    # Parse flags
-    while [ "$#" -gt 0 ]; do
+    while [[ "$#" -gt 0 ]]; do
         case "$1" in
             -j|--json)
                 json_flag="-o=json"
@@ -44,36 +44,67 @@ get-conf() {
                 silent_mode=true
                 shift
                 ;;
+            -d|--default)
+                if [[ -z "$2" ]]; then
+                    log.fatal "Option $1 requires an argument"
+                    return 1
+                fi
+                default_value="$2"
+                shift 2
+                ;;
+            -c|--config)
+                if [[ -z "$2" ]]; then
+                    log.fatal "Option $1 requires an argument"
+                    return 1
+                fi
+                conf_file="$2"
+                shift 2
+                ;;
             *)
-                break
+                # Positional argument (the key)
+                if [[ -z "$key" ]]; then
+                    key="$1"
+                else
+                    log.fatal "Only 1 key is allowed, received: '$key' and '$1'"
+                    return 1
+                fi
+                shift
                 ;;
         esac
     done
 
-    # Get remaining arguments
-    key="$1"
-
-    if [ -n "$2" ]; then
-        conf_file="$2"
-        root_key=""
+    if [[ -z "$key" ]]; then
+        log.error "Configuration key must be provided."
+        return 1
+    elif [[ ! -f "$conf_file" ]]; then
+        log.error "Config file '$conf_file' not found or is not readable."
+        return 1
+    elif [[ "$conf_file" != "$CONFIG_FILE" ]]; then
+        root_key="."
     fi
 
-    # Get config value
-    value="$(yq $json_flag eval "${root_key}.${key}" "$conf_file" 2>/dev/null)" || {
-        if [ "$silent_mode" = false ]; then
-            log.error "Failed to get config value for key '$key' from '$conf_file'"
-        fi
-        return 1
-    }
+    value="$(yq $json_flag eval "${root_key}.${key}" "$conf_file" 2>/dev/null)"
+    yq_status=$?
 
-    if [ "$value" == "null" ] || [ -z "$value" ]; then
+    if [[ "$yq_status" -ne 0 ]] || [[ "$value" == "null" ]] || [[ -z "$value" ]]; then
+
+        if [[ -n "$default_value" ]]; then
+            echo "$default_value"
+            return 0
+        fi
+
         if [ "$silent_mode" = false ]; then
-            log.error "Config key '$key' not found or empty in '$conf_file'"
+            if [[ "$yq_status" -ne 0 ]]; then
+                log.error "yq failed (non-zero exit status $yq_status) for key '$key' in '$conf_file'"
+            else
+                log.error "Config key '$key' not found or is empty/null in '$conf_file'"
+            fi
         fi
         return 1
     fi
 
     echo "$value"
+    return 0
 }
 
 replace-vars() {
