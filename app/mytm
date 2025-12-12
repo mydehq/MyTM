@@ -130,46 +130,46 @@ log -b "\n================= ${YELLOW}MyTM Packager${NC} =================\n"
 
 # Parse command line arguments
 while [[ $# -gt 0 ]]; do
-  case $1 in
-  -h | --help)
-    show-help
-    exit 0
-    ;;
-  -o | --output-dir)
-    ARG_OUTPUT_DIR="$2"
-    shift 2
-    ;;
-  -i | --input-dir)
-    ARG_INPUT_DIR="$2"
-    shift 2
-    ;;
-  -c | --config)
-    ARG_CONFIG_FILE="$2"
-    shift 2
-    ;;
-  -mv|--max-versions)
-    ARG_MAX_ARCHIVE_VERSIONS="$2"
-    shift 2
-    ;;
+    case $1 in
+        -h | --help)
+            show-help
+            exit 0
+            ;;
+        -o | --output-dir)
+            ARG_OUTPUT_DIR="$2"
+            shift 2
+            ;;
+        -i | --input-dir)
+            ARG_INPUT_DIR="$2"
+            shift 2
+            ;;
+        -c | --config)
+            ARG_CONFIG_FILE="$2"
+            shift 2
+            ;;
+        -mv|--max-versions)
+            ARG_MAX_ARCHIVE_VERSIONS="$2"
+            shift 2
+            ;;
         -pb|--publish-branch)
             ARG_PUBLISH_BRANCH="$2"
             shift 2
             ;;
-   -vt|--validate-theme)
-    VALIDATE_ONLY=true
-    if [[ -n "$2" && "$2" != -* ]]; then
-      VALIDATE_THEME="$2"
-      shift 2
-    else
-      shift 1
-    fi
-    ;;
-  *)
-    log.error "Unknown option: $1"
-    show-help
-    exit 1
-    ;;
-  esac
+        -vt|--validate-theme)
+            VALIDATE_ONLY=true
+            if [[ -n "$2" && "$2" != -* ]]; then
+                VALIDATE_THEME="$2"
+                shift 2
+            else
+                shift 1
+            fi
+            ;;
+        *)
+            log.error "Unknown option: $1"
+            show-help
+            exit 1
+            ;;
+    esac
 done
 
 
