@@ -17,6 +17,6 @@ packaging:
     #        ${{theme}}: theme name
     #        ${{file}}:  filename (version.tar.gz)
     mirrors:
-      - "https://my-tm.vercel.app/${{theme}}/${{file}}"
-      - "https://mytm-repo.netlify.app/${{theme}}/${{file}}"
       - "https://github.com/mydehq/mytm/raw/refs/heads/repo/${{theme}}/${{file}}"
+      - "https://repo-mytm.vercel.app/${{theme}}/${{file}}"
+      - "https://repo-mytm.netlify.app/${{theme}}/${{file}}"
