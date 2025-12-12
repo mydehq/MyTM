@@ -1,11 +1,11 @@
 {
   "schema_ver": 2,
   "repo_name": "official",
-  "release": 1765513840,
+  "release": 1765515118,
   "mirrors": [
-    "https://my-tm.vercel.app/${{theme}}/${{file}}",
-    "https://mytm-repo.netlify.app/${{theme}}/${{file}}",
-    "https://github.com/mydehq/mytm/raw/refs/heads/repo/${{theme}}/${{file}}"
+    "https://github.com/mydehq/mytm/raw/refs/heads/repo/${{theme}}/${{file}}",
+    "https://repo-mytm.vercel.app/${{theme}}/${{file}}",
+    "https://repo-mytm.netlify.app/${{theme}}/${{file}}"
   ],
   "themes": {
     "catppuccin-macchiato": {
