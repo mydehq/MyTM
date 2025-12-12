@@ -33,10 +33,18 @@ jobs:
       - name: Get configuration variables
         id: get-config
         run: |
-          OUTPUT_DIR="$(yq '.packaging.output-dir' config.yml)" || exit 1
+          OUTPUT_DIR="$(yq '.packaging.output-dir' config.yml)"
+          PUBLISH_BRANCH="$(yq '.packaging.repo.branch' config.yml)"
+          
+          if [[ "$OUTPUT_DIR" == "null" ]]; then
+              echo "::error:: Couldn't get output dir"
+              exit 1
+          elif [[ "$PUBLISH_B4ANCH" == "null" ]]; then
+              echo "::error:: Couldn't get publish branch"
+              exit 1
+          fi
+          
           echo "output-dir=$OUTPUT_DIR" >> $GITHUB_OUTPUT
-
-          PUBLISH_BRANCH="$(yq '.packaging.publish-branch' config.yml)" || exit 1
           echo "publish-branch=$PUBLISH_BRANCH" >> $GITHUB_OUTPUT
 
       - name: Configure Git Credentials (Initial setup)
