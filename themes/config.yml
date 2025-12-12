@@ -11,11 +11,6 @@ packaging:
     name: "official"
     branch: "repo"
 
-    # Direct download urls of theme files
-    # Can add multiple mirrors, will be tried in order
-    # MUST INCLUDE:
-    #        ${{theme}}: theme name
-    #        ${{file}}:  filename (version.tar.gz)
     mirrors:
       - "https://github.com/mydehq/mytm/raw/refs/heads/repo/${{theme}}/${{file}}"
       - "https://repo-mytm.vercel.app/${{theme}}/${{file}}"

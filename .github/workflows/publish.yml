@@ -33,17 +33,17 @@ jobs:
       - name: Get configuration variables
         id: get-config
         run: |
-          OUTPUT_DIR="$(yq '.packaging.output-dir' config.yml)"
-          PUBLISH_BRANCH="$(yq '.packaging.repo.branch' config.yml)"
-          
+          OUTPUT_DIR="$(yq '.packaging.output-dir' themes/config.yml)"
+          PUBLISH_BRANCH="$(yq '.packaging.repo.branch' themes/config.yml)"
+
           if [[ "$OUTPUT_DIR" == "null" ]]; then
               echo "::error:: Couldn't get output dir"
               exit 1
-          elif [[ "$PUBLISH_B4ANCH" == "null" ]]; then
+          elif [[ "$PUBLISH_BRANCH" == "null" ]]; then
               echo "::error:: Couldn't get publish branch"
               exit 1
           fi
-          
+
           echo "output-dir=$OUTPUT_DIR" >> $GITHUB_OUTPUT
           echo "publish-branch=$PUBLISH_BRANCH" >> $GITHUB_OUTPUT
 
@@ -93,7 +93,7 @@ jobs:
 
       - name: Package themes
         id: package
-        run: bash app/mytm
+        run: bash app/mytm -c themes/config.yml
 
       - name: Publish themes and index
         run: |
