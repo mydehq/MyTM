@@ -382,24 +382,31 @@ validate-json() {
 # Usage: create-repo-index -rn <repo_name> -rt <release_time> -su <src_urls> [-th <theme_object>] [-o <output_file>]
 # Flags:
 #   -rn|--repo-name <repo_name>        Repository name (e.g., "official")
+#   -ru|--repo-url <url>               Repository URL (e.g., "https://github.com/mydehq/mytm")
 #   -rt|--release-time <timestamp>     Repository release time (UNIX timestamp)
 #   -su|--src-urls <json_array>        Source URLs as JSON array (must contain ${{theme}} and ${{file}})
+#   -ml|--mirror-list <json_array>     Mirror list as JSON array (optional, defaults to [])
+#   -mv|--max-versions <int>           Maximum number of versions to keep (optional, defaults to 10)
 #   -th|--theme-obj <json_object>      Theme object as JSON (optional, defaults to {})
 #   -o|--output-file <file_path>       Output file path (optional, defaults to $OUTPUT_DIR/index.json)
-#
 create-repo-index() {
-    local repo_name=""
-    local repo_release_time=""
-    local repo_mirrors=""
-    local max_versions=""
-    local theme_object=""
-    local output_file=""
+    local repo_name="" \
+          repo_url="" \
+          repo_release_time="" \
+          repo_mirrors="" \
+          max_versions="" \
+          theme_object="" \
+          output_file=""
 
     # Parse flags
     while [ $# -gt 0 ]; do
         case "$1" in
             -rn|--repo-name)
                 repo_name="$2"
+                shift 2
+                ;;
+            -ru|--repo-url)
+                repo_url="$2"
                 shift 2
                 ;;
             -rt|--release-time)
@@ -467,6 +474,7 @@ create-repo-index() {
     # Use --argjson for numeric and array inputs to maintain data type integrity.
     jq -n \
         --arg repo_name "$repo_name" \
+        --arg repo_url "$repo_url" \
         --argjson release_time "$repo_release_time" \
         --argjson max_versions "$max_versions" \
         --argjson repo_mirrors "$repo_mirrors" \
@@ -474,6 +482,7 @@ create-repo-index() {
         '{
             schema_ver: 2,
             repo_name: $repo_name,
+            repo_url: $repo_url,
             release: $release_time,
             max_versions: $max_versions,
             mirrors: $repo_mirrors,

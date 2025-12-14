@@ -2,11 +2,14 @@ packaging:
   input-dir: "themes"
   output-dir: "dist"
   max-versions: 10
+
   meta:
     readme: true
     index-html: true
+
   repo:
     name: "official"
+    url: "https://github.com/mydehq/mytm"
     branch: "repo"
     mirrors:
       - "https://github.com/mydehq/mytm/raw/refs/heads/repo/${{theme}}/${{file}}"

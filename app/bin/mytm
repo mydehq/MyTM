@@ -353,6 +353,7 @@ fi
 
 # Get repo metadata
 repo_name="$(get-conf "repo.name")" || exit 1
+repo_url="$(get-conf "repo.url" -d "")"
 repo_branch="$PUBLISH_BRANCH"
 repo_release_time="$(date +%s)"
 repo_mirrors="$(get-conf -j "repo.mirrors")" || exit 1
@@ -361,6 +362,7 @@ repo_mirrors="$(get-conf -j "repo.mirrors")" || exit 1
 log.info -b "$action_msg"
 if create-repo-index \
         -rn "$repo_name" \
+        -ru "$repo_url" \
         -rt "$repo_release_time" \
         -mv "$MAX_ARCHIVE_VERSIONS" \
         -ml "$repo_mirrors" \
