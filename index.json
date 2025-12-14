@@ -1,0 +1,20 @@
+{
+  "schema_ver": 2,
+  "repo_name": "official",
+  "repo_url": "",
+  "release": 1765729416,
+  "max_versions": 10,
+  "mirrors": [
+    "https://github.com/mydehq/mytm/raw/refs/heads/repo/${{theme}}/${{file}}",
+    "https://repo-mytm.vercel.app/${{theme}}/${{file}}",
+    "https://repo-mytm.netlify.app/${{theme}}/${{file}}"
+  ],
+  "themes": {
+    "catppuccin-macchiato": {
+      "latest": "1.0.0"
+    },
+    "dracula": {
+      "latest": "1.0.0"
+    }
+  }
+}
