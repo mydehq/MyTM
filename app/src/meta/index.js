@@ -63,7 +63,7 @@ async function loadRepoData() {
                 themesList.innerHTML = themes.map(([name, info]) => `
                     <tr>
                         <td class="ps-3">
-                            <a href="./${name}/versions.json" class="fw-bold text-decoration-none text-maroon">${name}</a>
+                            <a href="./${name}" class="fw-bold text-decoration-none text-maroon">${name}</a>
                         </td>
                         <td class="text-center">
                             <a href="./${name}/${info.latest}.tar.gz" class="text-decoration-none text-maroon">${info.latest}</a>

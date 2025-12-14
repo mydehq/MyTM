@@ -560,6 +560,27 @@ else
         fi
 
 
+        #------------ Copy Theme Index HTML --------------
+
+        # Copy theme-index.html as index.html
+        theme_index_src="$SRC_DIR/meta/theme-index.html"
+        theme_index_dest="$archive_dir/index.html"
+        
+        if [ -f "$theme_index_src" ]; then
+            # Read template and replace placeholder
+            theme_index_content=$(<"$theme_index_src")
+            theme_index_content="${theme_index_content//\{\{MYTM_URL\}\}/$MYTM_URL}"
+            
+            # Check if update is needed
+            if [ ! -f "$theme_index_dest" ] || ! echo "$theme_index_content" | cmp -s - "$theme_index_dest"; then
+                echo "$theme_index_content" > "$theme_index_dest" || log.error "Failed to copy theme index.html"
+                log.success "Copied theme index.html"
+            else
+                log.info "Theme index.html already up to date"
+            fi
+        fi
+
+
         #------------ Create/Update Index Entry --------------
 
         export YQI_THM="$theme_name" \

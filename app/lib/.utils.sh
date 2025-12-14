@@ -587,6 +587,10 @@ init-meta() {
         _copy  "$index_js"                "$output_dir/index.js"     || return 1
         _copy  "$SRC_DIR/meta/index.css"  "$output_dir/index.css"    || return 1
         _copy  "$SRC_DIR/icon.ico"        "$output_dir/favicon.ico"  || return 1
+        
+        # Copy theme-index.js 
+        _copy  "$SRC_DIR/meta/theme-index.js"  "$output_dir/theme-index.js"  || return 1
+
     else
         # Clean up related files if generation is disabled
         [ -f "$output_dir/index.html"  ] && rm "$output_dir/index.html"  && log.info "Deleted index.html"
