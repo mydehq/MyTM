@@ -4,7 +4,7 @@
 # Builds theme packages & generates index.json
 
 
-#------------ Determine Root ----------
+#---------------- Determine Root ---------------
 
 if [[ "$(basename "$PWD")" == "app" ]]; then
   PROJECT_ROOT=".."
@@ -17,6 +17,7 @@ fi
 BIN_DIR="$(dirname "${BASH_SOURCE[0]}")"
 LIB_DIR="$BIN_DIR/../lib"
 SRC_DIR="$BIN_DIR/../src"
+ICON_DIR="$BIN_DIR/../icons"
 
 INPUT_DIR="$PROJECT_ROOT/themes"
 OUTPUT_DIR="$PROJECT_ROOT/dist"
@@ -60,7 +61,7 @@ INDEX_CONTENT='
 
 #------------- Pre Processing -------------
 
-export PROJECT_ROOT BIN_DIR LIB_DIR SRC_DIR \
+export PROJECT_ROOT BIN_DIR LIB_DIR SRC_DIR ICON_DIR \
        INPUT_DIR OUTPUT_DIR CONFIG_FILE PUBLISH_BRANCH \
        TEMP_DIR CACHE_DIR TEMPLATE_DIR \
        VALIDATE_ONLY VALIDATE_THEME \

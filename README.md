@@ -1,7 +1,7 @@
 <div align="center">
 
 <h1>
-    <img src="./app/src/icon.png" alt="MyTM" width="80">
+    <img src="./app/icons/icon.png" alt="MyTM" width="80">
     <p>MyTM</p>
 </h1>
 
@@ -24,6 +24,7 @@ Supports gtk, qt, kde, rofi & others through templates
 ```bash
 myctl plugin add mytm
 ```
+
 This will automatically add `official` repo. it's hosted [here](../repo).
 
 ### Set a theme
@@ -116,7 +117,7 @@ Available options, Note that all are under `packaging` key:
 2. `output-dir`: absolute/relative path of output dist dir.
 3. `max-versions`: maximum number of versions to keep per theme.
 
-4. `repo.name`: name/id of the repo, any string except 'official'. 
+4. `repo.name`: name/id of the repo, any string except 'official'.
 5. `repo.branch`: Git branch where themes will be published (if using CI/CD).
 6. `repo.mirrors`:
    - Array of direct download URLs.

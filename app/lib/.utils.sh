@@ -505,10 +505,10 @@ create-repo-index() {
 cmp-files() {
     local file1="$1"
     local file2="$2"
-    
+
     # Get file extension
     local ext="${file1##*.}"
-    
+
     # Text file extensions
     case "$ext" in
         html|htm|css|js|jsx|ts|tsx|json|xml|txt|md|mdx|yml|yaml|toml|py|c|cc|cpp|hpp|h|sh|bash|zsh|rs|go|zig|gitignore)
@@ -530,13 +530,15 @@ init-meta() {
     local output_dir="${OUTPUT_DIR}" \
           gen_readme=true gen_index=true \
           index_template="$SRC_DIR/meta/index.html" index_html_tpl \
-          index_js="$SRC_DIR/meta/index.js"
+          index_js="$SRC_DIR/meta/index.js" \
+          index_css="$SRC_DIR/meta/index.css" \
+          favicon="$ICON_DIR/icon.ico"
 
     # Check config for what to generate
     local val
     val=$(yq eval ".packaging.meta.readme" "$CONFIG_FILE" 2>/dev/null)
     gen_readme="${val:-true}"  # Default to true if null
-    
+
     val=$(yq eval ".packaging.meta.index-html" "$CONFIG_FILE" 2>/dev/null)
     gen_index="${val:-true}"  # Default to true if null
 
@@ -546,7 +548,7 @@ init-meta() {
         local dest="$2"
         local required="${3:-true}"
         local desc="$(basename "$dest")"
-        
+
         if [ ! -f "$src" ]; then
             if [ "$required" == "true" ]; then
                 log.error "$desc not found"
@@ -584,11 +586,11 @@ init-meta() {
         log.success "index.html"
 
         # Copy CSS, JS, and favicon
-        _copy  "$index_js"                "$output_dir/index.js"     || return 1
-        _copy  "$SRC_DIR/meta/index.css"  "$output_dir/index.css"    || return 1
-        _copy  "$SRC_DIR/icon.ico"        "$output_dir/favicon.ico"  || return 1
-        
-        # Copy theme-index.js 
+        _copy  "$index_js"    "$output_dir/index.js"     || return 1
+        _copy  "$index_css"   "$output_dir/index.css"    || return 1
+        _copy  "$favicon"     "$output_dir/favicon.ico"  || return 1
+
+        # Copy theme-index.js
         _copy  "$SRC_DIR/meta/theme-index.js"  "$output_dir/theme-index.js"  || return 1
 
     else
