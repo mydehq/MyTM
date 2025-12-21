@@ -322,7 +322,7 @@ compare-hash () {
     fi
 
     # Normalize algo
-    algo="$(echo "$algo" | tr '[:upper:]' '[:lower:]')"
+    algo="${algo,,}"
 
     local h1 h2
 
@@ -580,7 +580,7 @@ init-meta() {
         fi
 
         # Replace {{MYTM_URL}} placeholder with actual URL
-        index_html_tpl="${index_html_tpl//\{\{MYTM_URL\}\}/$MYTM_URL}"
+        index_html_tpl="${index_html_tpl//\$\{\{MYTM_URL\}\}/$MYTM_URL}"
 
         echo "$index_html_tpl" > "$output_dir/index.html"
         log.success "index.html"
