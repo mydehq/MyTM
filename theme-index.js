@@ -1,15 +1,21 @@
 // Fetches and renders theme versions from versions.json
 
+function normalizeBaseUrl() {
+  const url = window.location.href;
+  return url.endsWith("/") ? url : url + "/";
+}
+
 async function loadVersions() {
+  const baseUrl = normalizeBaseUrl();
+
   try {
-    const repoResponse = await fetch("../index.json");
+    const repoResponse = await fetch(new URL("../index.json", baseUrl));
     if (repoResponse.ok) {
       const repoData = await repoResponse.json();
       if (repoData.repo_name) {
-        const titleText = `MyTM / ${repoData.repo_name}`;
         const navbarTitle = document.getElementById("navbar-title");
         if (navbarTitle) {
-          navbarTitle.textContent = titleText;
+          navbarTitle.textContent = `MyTM / ${repoData.repo_name}`;
         }
       }
     }
@@ -18,15 +24,13 @@ async function loadVersions() {
   }
 
   try {
-    const response = await fetch(
-      new URL("versions.json", window.location.href),
-    );
+    const response = await fetch(new URL("versions.json", baseUrl));
     if (!response.ok) throw new Error("Failed to load versions.json");
 
     const versions = await response.json();
 
     // Get theme name from URL path
-    const pathParts = window.location.pathname.split("/").filter((p) => p);
+    const pathParts = new URL(baseUrl).pathname.split("/").filter(Boolean);
     const themeName = pathParts[pathParts.length - 1] || "Theme";
 
     // Update page title
@@ -44,9 +48,10 @@ async function loadVersions() {
       versionCount.textContent = versions.length;
     }
 
-    // Populate versions list
+    // Populate versions table
     const versionsList = document.getElementById("versions-list");
-    if (!versions || versions.length === 0) {
+
+    if (!Array.isArray(versions) || versions.length === 0) {
       versionsList.innerHTML =
         '<tr><td colspan="3" class="text-center text-secondary py-4">No versions available</td></tr>';
       return;
@@ -55,17 +60,22 @@ async function loadVersions() {
     versionsList.innerHTML = versions
       .map(
         (v) => `
-            <tr>
-                <td class="text-center">
-                  <a href="./${v.ver}.tar.gz" class="fw-bold text-decoration-none text-maroon">${v.ver}</a>
-                </td>
-                <td class="text-center">
-                  <span class="badge bg-secondary">${v.hash.algo || "sha256"}</span>
-                </td>
-                <td class="text-center">
-                  <span class="font-monospace small" style="word-break: break-all;">${v.hash.value}</span>
-                </td>
-            </tr>
+          <tr>
+            <td class="text-center">
+              <a href="${v.ver}.tar.gz"
+                 class="fw-bold text-decoration-none text-maroon">
+                 ${v.ver}
+              </a>
+            </td>
+            <td class="text-center">
+              <span class="badge bg-secondary">${v.hash?.algo || "sha256"}</span>
+            </td>
+            <td class="text-center">
+              <span class="font-monospace small" style="word-break: break-all;">
+                ${v.hash?.value || ""}
+              </span>
+            </td>
+          </tr>
         `,
       )
       .join("");
@@ -77,7 +87,7 @@ async function loadVersions() {
   }
 }
 
-// Load data when DOM is ready
+/* ---------------- Init ---------------- */
 if (document.readyState === "loading") {
   document.addEventListener("DOMContentLoaded", loadVersions);
 } else {
