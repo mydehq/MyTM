@@ -58,13 +58,15 @@ async function loadVersions() {
     }
 
     versionsList.innerHTML = versions
-      .map(
-        (v) => `
+      .map((v) => {
+        const tarUrl = new URL(`${v.ver}.tar.gz`, baseUrl).href;
+
+        return `
           <tr>
             <td class="text-center">
-              <a href="${v.ver}.tar.gz"
+              <a href="${tarUrl}"
                  class="fw-bold text-decoration-none text-maroon">
-                 ${v.ver}
+                ${v.ver}
               </a>
             </td>
             <td class="text-center">
@@ -76,8 +78,8 @@ async function loadVersions() {
               </span>
             </td>
           </tr>
-        `,
-      )
+        `;
+      })
       .join("");
   } catch (error) {
     console.error("Error loading versions:", error);
