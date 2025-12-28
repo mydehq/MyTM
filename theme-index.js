@@ -18,7 +18,9 @@ async function loadVersions() {
   }
 
   try {
-    const response = await fetch("./versions.json");
+    const response = await fetch(
+      new URL("versions.json", window.location.href),
+    );
     if (!response.ok) throw new Error("Failed to load versions.json");
 
     const versions = await response.json();
