@@ -1,9 +1,6 @@
 <div align="center">
-
-<h1>
-    <img src="./app/icons/icon.png" alt="MyTM" width="80">
-    <p>MyTM</p>
-</h1>
+<img src="./app/icons/icon.png" alt="MyTM" width="80">
+<h1>MyTM</h1>
 
 MyTM or My Theme Manager is a [MyCTL](https://github.com/mydehq/myctl) plugin for desktop theme management.
 <br>
