@@ -2,8 +2,8 @@
 pkgname=mytm
 pkgdesc="Global theme manager plugin for MyCTL"
 pkgver=0.0.0
-pkgrel=2
-arch=('any')
+pkgrel=1
+arch=('x86_64')
 url="https://github.com/mydehq/${pkgname}"
 license=('GPL3')
 sha256sums=('SKIP')
@@ -12,8 +12,24 @@ depends=(
   "myctl"
 )
 
-# source=("${url}/releases/download/v${pkgver}/${pkgname}-${pkgver}.tar.gz")
+makedepends=(
+  "go"
+  "git"
+)
+
+source=("${pkgname}::git+file://${PWD}")
+
+prepare() {
+    ls -R "${srcdir}"
+    cd "${srcdir}/${pkgname}/app"
+    go mod tidy
+}
+
+build() {
+    cd "${srcdir}/${pkgname}/app"
+    go build -o "${pkgname}"
+}
 
 package() {
-  msg2 "Not Yet Ready" | true
+    install -Dm755 "${srcdir}/${pkgname}/app/${pkgname}" "${pkgdir}/usr/bin/${pkgname}"
 }
